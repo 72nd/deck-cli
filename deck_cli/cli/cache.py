@@ -29,9 +29,9 @@ class Cache:
         is returned"""
         try:
             with open(path, "r") as fil:
-                data = yaml.load(fil.read())
+                raw = yaml.load(fil.read())
             schema = marshmallow_dataclass.class_schema(Cache)
-            rsl = schema.load(data)
+            rsl = schema.load(raw)
         except IOError:
             rsl = Cache()
         rsl.internal_hash = rsl.mails.hash()
@@ -46,4 +46,3 @@ class Cache:
         with open(path, "w") as fil:
             data = yaml.dump(cache)
             fil.write(data)
-

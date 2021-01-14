@@ -2,8 +2,9 @@
 Module handles all the configuration stuff.
 """
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, ClassVar, Type
 
+from marshmallow import Schema
 import marshmallow_dataclass
 import yaml
 
@@ -37,19 +38,29 @@ class Config:
             default="deck-cache.yaml",
         )
     )
-
-    def __init__(self) -> 'Config':
-        pass
+    Schema: ClassVar[Type[Schema]] = Schema
 
     @classmethod
-    def load(cls, path: str) -> 'Config':
-        with open(path, "r") as fil:
-            raw = yaml.load(fil.read())
-        schema = marshmallow_dataclass.class_schema(Config)
-        return schema.load(raw)
+    def from_yaml(cls, raw: str) -> 'Config':
+        """Loads the configuration from a given YAML string."""
+        schema = marshmallow_dataclass.class_schema(Config)()
+        data = yaml.load(raw, Loader=yaml.FullLoader)
+        return schema.load(data)
+
+    @classmethod
+    def defaults(cls) -> 'Config':
+        """Returns a new instance of the Config with the default values."""
+        return Config(
+            url="nc.example.com",
+            user="usr",
+            password="secret",
+            ignore_board=["Personal"],
+            mail_cache_path="check-cache.yaml"
+        )
 
     def to_yaml(self) -> str:
         """Returns the config data-class as a YAML string."""
+        #cfg = Config.Schema().dumps(self)
         schema = marshmallow_dataclass.class_schema(Config)()
         cfg = schema.dump(self)
         return yaml.dump(cfg)

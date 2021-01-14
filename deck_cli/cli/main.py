@@ -1,7 +1,8 @@
 """
 Main file for the CLI interface.
 """
-from deck_cli.cli.config import Config
+from deck_cli.cli.config import Config as ConfigClass
+from deck_cli.cli.report import Report
 
 import click
 
@@ -23,7 +24,7 @@ def add():
 @click.argument("PATH", type=click.File("wb"))
 def config(path: click.File):
     """Creates a default configuration file for the application."""
-    cfg = Config()
+    cfg = ConfigClass.defaults()
     path.write(bytes(cfg.to_yaml(), "utf-8"))
 
 
@@ -39,9 +40,12 @@ def mail_template():
 
 
 @click.command()
-def report():
+@click.argument("CONFIG", type=click.File("r"))
+def report(config: click.File):
     """The report command creates a overview over all tasks."""
-    print("the report command")
+    data = ConfigClass.from_yaml(config)
+    report = Report(data)
+    report.run()
 
 
 @click.command()
