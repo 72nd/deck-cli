@@ -1,2 +1,3 @@
 # deck-cli
-CLI Interface for Nextcloud Deck
+
+Still early alpha. CLI Interface for Nextcloud Deck.
