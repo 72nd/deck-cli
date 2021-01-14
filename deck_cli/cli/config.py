@@ -2,6 +2,7 @@
 Module handles all the configuration stuff.
 """
 from dataclasses import dataclass, field
+from typing import List
 
 import marshmallow_dataclass
 import yaml
@@ -24,6 +25,11 @@ class Config:
         metadata=dict(
             description="Nextcloud password",
             default="secret")
+    )
+    ignore_board: List[str] = field(
+        metadata=dict(
+            description="Name of boards to be ignored",
+            default=["Personal"])
     )
 
     def __init__(self):
