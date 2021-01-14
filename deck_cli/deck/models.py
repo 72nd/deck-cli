@@ -11,12 +11,35 @@ import marshmallow_dataclass
 
 
 @dataclass
+class Base:
+    """
+    The base class for all data classes. Provides the JSON
+    unmarshaling for all classes.
+    """
+
+    @classmethod
+    def from_json(cls, raw: str, many=bool) -> 'NCBoard':
+        """Reads the NCBoard from a JSON string."""
+        schema = marshmallow_dataclass.class_schema(cls)()
+        return schema.loads(raw, many=many)
+
+
+@dataclass
 class NCDeckUser:
     """The user in Nextcloud Deck."""
     primary_key: str = field(metadata=dict(data_key="primaryKey"))
     uid: str
     display_name: str = field(metadata=dict(data_key="displayname"))
     user_type: int = field(metadata=dict(data_key="type"))
+
+
+@dataclass
+class NCDeckAssignedUser:
+    """A user which is assigned to a Card."""
+    user_id: int = field(metadata=dict(data_key="id"))
+    participant: NCDeckUser
+    card_id: int = field(metadata=dict(data_key="cardId"))
+    assignment_type: int = field(metadata=dict(data_key="type"))
 
 
 @dataclass
@@ -70,7 +93,7 @@ class NCDeckBoardSettings:
 
 
 @dataclass
-class NCBaseBoard:
+class NCBaseBoard(Base):
     """
     A Deck Board as it's returned by the query for a specific board
     id. Get-all-boards at the other hand includes some extra fields
@@ -100,20 +123,69 @@ class NCBaseBoard:
                       ["deletedAt", "lastModified"])
         return data
 
-    @classmethod
-    def from_json(cls, raw: str, many=bool) -> 'NCBoard':
-        """Reads the NCBoard from a JSON string."""
-        schema = marshmallow_dataclass.class_schema(cls)()
-        return schema.loads(raw, many=many)
-
 
 @dataclass
 class NCBoard(NCBaseBoard):
     """A Deck Board as returned by the get-all-boards API call."""
     shared: int
 
+
+@dataclass
+class NCDeckCard:
+    """A single card of the Deck. Typically represents a task."""
+    title: str
+    description: str
+    stack_id: int = field(metadata=dict(data_key="stackId"))
+    card_type: str = field(metadata=dict(data_key="type"))
+    last_modified: Optional[datetime.datetime] = field(
+        metadata=dict(data_key="lastModified"))
+    last_editor: Any = field(metadata=dict(data_key="lastEditor"))
+    created_at: Optional[datetime.datetime] = field(
+        metadata=dict(data_key="createdAt"))
+    labels: List[NCDeckLabel]
+    assigned_users: List[NCDeckAssignedUser] = field(
+        metadata=dict(data_key="assignedUsers"))
+    attachments: Any
+    attachment_count: int = field(metadata=dict(data_key="attachmentCount"))
+    owner: NCDeckUser
+    order: int
+    archived: bool
+    duedate: Optional[datetime.datetime]
+    deleted_at: Optional[datetime.datetime] = field(
+        metadata=dict(data_key="deletedAt"))
+    comments_unread: int = field(metadata=dict(data_key="commentsUnread"))
+    card_id: int = field(metadata=dict(data_key="id"))
+    etag: str = field(metadata=dict(data_key="ETag"))
+    overdue: int
+
+    @pre_load
+    def convert_date(self, data, **kwargs):
+        """Converts all Unix dates to normal python datetime objects."""
+        _func_on_dict(data, _timestamp_to_optional_date,
+                      ["deletedAt", "lastModified", "createdAt"])
+        return data
+
+
+@dataclass
+class NCDeckStack(Base):
+    """A Stack of a Deck Board."""
+    title: str
+    board_id: int = field(metadata=dict(data_key="boardId"))
+    cards: Optional[List[NCDeckCard]]
+    deleted_at: Optional[datetime.datetime] = field(
+        metadata=dict(data_key="deletedAt"))
+    last_modified: Optional[datetime.datetime] = field(
+        metadata=dict(data_key="lastModified"))
+
     class Meta:
         unknown = EXCLUDE
+
+    @pre_load
+    def convert_date(self, data, **kwargs):
+        """Converts all Unix dates to normal python datetime objects."""
+        _func_on_dict(data, _timestamp_to_optional_date,
+                      ["deletedAt", "lastModified"])
+        return data
 
 
 def _func_on_dict(

@@ -2,7 +2,9 @@
 Fetch abstracts all calls to the Nextcloud and Deck API.
 """
 
-from deck_cli.deck.models import NCBoard, NCBaseBoard
+from deck_cli.deck.models import NCBoard, NCBaseBoard, NCDeckStack
+
+from typing import List
 
 import requests
 
@@ -25,34 +27,40 @@ class Fetch:
         self.user = user
         self.password = password
 
-    def all_boards(self) -> NCBoard:
+    def all_boards(self) -> List[NCBoard]:
         """Returns all boards of the given user."""
-        url = self.__deck_api_url(ALL_USER_BOARDS_URL)
-        rqs = requests.get(
-            url,
-            headers=self.__request_header(),
-            auth=(self.user, self.password))
-        return NCBoard.from_json(rqs.text, True)
+        data = self.__send_get_request(ALL_USER_BOARDS_URL)
+        return NCBoard.from_json(data, True)
 
-    def board_by_id(self, board_id: int):
+    def board_by_id(self, board_id: int) -> NCBaseBoard:
         """Returns a board by a given board id."""
-        url = self.__deck_api_url(SINGLE_BOARD_URL.format(board_id=board_id))
+        data = self.__send_get_request(
+            SINGLE_BOARD_URL.format(board_id=board_id))
+        return NCBaseBoard.from_json(data, False)
+
+    def stacks_by_board(self, board_id: int) -> NCDeckStack:
+        """Returns all stacks of a given board with the given id."""
+        data = self.__send_get_request(
+            ALL_STACKS_URL.format(board_id=board_id))
+        print(NCDeckStack.from_json(data, True))
+
+    def user_mail(self, name: str) -> str:
+        """
+        Returns a dictionary mapping the given user name to his/her
+        mail address.
+        """
+
+    def __send_get_request(self, postfix: str) -> str:
+        """
+        Calls the DECK API with the given URL postfix and returns
+        the answer as a string.
+        """
+        url = self.__deck_api_url(postfix)
         rqs = requests.get(
             url,
             headers=self.__request_header(),
             auth=(self.user, self.password))
-        print(NCBaseBoard.from_json(rqs.text, False))
-
-    def stacks_by_board(self, board_id: int):
-        """Returns all stacks of a given board with the given id."""
-
-    def card_by_board_stack_id(self, board_id: int, stack_id: int):
-        """Returns a card of a given board and it's stack defined by id."""
-
-    def user_mail(self):
-        """
-        Returns a dictionary mapping the user names to their mail address.
-        """
+        return rqs.text
 
     def __deck_api_url(self, postfix: str) -> str:
         """Returns the Deck API URL with a given postfix."""
