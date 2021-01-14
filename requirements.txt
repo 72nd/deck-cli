@@ -1,0 +1,8 @@
+click==7.1.2
+-e git+git@github.com:72nd/deck-cli.git@5f0ba061b525462c8f0db3f56d94785ff2503d5c#egg=deck_cli
+marshmallow==3.10.0
+marshmallow-dataclass==8.3.0
+mypy-extensions==0.4.3
+PyYAML==5.3.1
+typing-extensions==3.7.4.3
+typing-inspect==0.6.0
