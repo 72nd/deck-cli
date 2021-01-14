@@ -31,9 +31,22 @@ class Config:
             description="Name of boards to be ignored",
             default=["Personal"])
     )
+    mail_cache_path: str = field(
+        metadata=dict(
+            description="Path to mail-address cache",
+            default="deck-cache.yaml",
+        )
+    )
 
-    def __init__(self):
+    def __init__(self) -> 'Config':
         pass
+
+    @classmethod
+    def load(cls, path: str) -> 'Config':
+        with open(path, "r") as fil:
+            raw = yaml.load(fil.read())
+        schema = marshmallow_dataclass.class_schema(Config)
+        return schema.load(raw)
 
     def to_yaml(self) -> str:
         """Returns the config data-class as a YAML string."""

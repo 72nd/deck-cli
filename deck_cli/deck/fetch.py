@@ -3,6 +3,7 @@ Fetch abstracts all calls to the Nextcloud and Deck API.
 """
 
 DECK_APP_URL = "apps/deck/api/v1.0"
+USER_DETAILS_URL = "ocs/v1.php/cloud/{user_uuid}"
 ALL_USER_BOARDS_URL = "boards"
 SINGLE_BOARD_URL = "boards/{board_id}"
 ALL_STACKS_URL = "boards/{board_id}/stacks"
@@ -25,4 +26,9 @@ class Fetch:
         """Returns all stacks of a given board with the given id."""
 
     def card_by_board_stack_id(self, board_id: int, stack_id: int):
-        """Retruns a card of a given board and it's stack defined by id."""
+        """Returns a card of a given board and it's stack defined by id."""
+
+    def user_mail(self):
+        """
+        Returns a dictionary mapping the user names to their mail address.
+        """

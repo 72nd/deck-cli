@@ -8,7 +8,10 @@ import click
 
 @click.group()
 def cli():
-    """Dummy root group for all commands of the CLI application."""
+    """
+    deck-cli is a collection of CLI tools for working with the Deck App
+    from Nextcloud.
+    """
 
 
 @click.command()
