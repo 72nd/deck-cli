@@ -17,4 +17,4 @@ class Report:
     def run(self):
         """Starts the generation of the report."""
         deck = Fetch(self.config.url, self.config.user, self.config.password)
-        deck.all_boards()
+        deck.board_by_id(9)

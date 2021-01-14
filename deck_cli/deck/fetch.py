@@ -2,7 +2,7 @@
 Fetch abstracts all calls to the Nextcloud and Deck API.
 """
 
-from deck_cli.deck.nc_board import NCBoard
+from deck_cli.deck.models import NCBoard, NCBaseBoard
 
 import requests
 
@@ -25,18 +25,23 @@ class Fetch:
         self.user = user
         self.password = password
 
-    def all_boards(self):
+    def all_boards(self) -> NCBoard:
         """Returns all boards of the given user."""
         url = self.__deck_api_url(ALL_USER_BOARDS_URL)
         rqs = requests.get(
             url,
             headers=self.__request_header(),
             auth=(self.user, self.password))
-        board = NCBoard.from_json(rqs.text)
-        print(board)
+        return NCBoard.from_json(rqs.text, True)
 
     def board_by_id(self, board_id: int):
         """Returns a board by a given board id."""
+        url = self.__deck_api_url(SINGLE_BOARD_URL.format(board_id=board_id))
+        rqs = requests.get(
+            url,
+            headers=self.__request_header(),
+            auth=(self.user, self.password))
+        print(NCBaseBoard.from_json(rqs.text, False))
 
     def stacks_by_board(self, board_id: int):
         """Returns all stacks of a given board with the given id."""

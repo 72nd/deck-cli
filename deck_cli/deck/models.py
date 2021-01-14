@@ -25,11 +25,18 @@ class NCDeckLabel:
     title: str
     color: str
     board_id: int = field(metadata=dict(data_key="boardId"))
-    card_id: int = field(metadata=dict(data_key="cardId"))
+    card_id: Optional[int] = field(metadata=dict(data_key="cardId"))
     last_modified: datetime.datetime = field(
         metadata=dict(data_key="lastModified"))
     label_id: int = field(metadata=dict(data_key="id"))
     etag: str = field(metadata=dict(data_key="ETag"))
+
+    @pre_load
+    def convert_date(self, data, **kwargs):
+        """Converts all Unix dates to normal python datetime objects."""
+        _func_on_dict(data, _timestamp_to_optional_date,
+                      ["lastModified"])
+        return data
 
 
 @dataclass
@@ -63,8 +70,12 @@ class NCDeckBoardSettings:
 
 
 @dataclass
-class NCBoard:
-    """A Deck Board as returned by the get-all-boards API call."""
+class NCBaseBoard:
+    """
+    A Deck Board as it's returned by the query for a specific board
+    id. Get-all-boards at the other hand includes some extra fields
+    as implemented by the NCBoard.
+    """
     title: str
     owner: NCDeckUser
     color: str
@@ -72,7 +83,8 @@ class NCBoard:
     labels: List[NCDeckLabel]
     shared_to: List[NCDeckSharedEntity] = field(metadata=dict(data_key="acl"))
     permissions: NCDeckPermissions
-    shared: int
+    users: List[NCDeckUser]
+    stacks: List[Any]
     deleted_at: Optional[datetime.datetime] = field(
         metadata=dict(data_key="deletedAt"))
     last_modified: Optional[datetime.datetime] = field(
@@ -80,9 +92,6 @@ class NCBoard:
     settings: NCDeckBoardSettings
     board_id: int = field(metadata=dict(data_key="id"))
     etag: str = field(metadata=dict(data_key="ETag"))
-
-    class Meta:
-        unknown = EXCLUDE
 
     @pre_load
     def convert_date(self, data, **kwargs):
@@ -92,10 +101,19 @@ class NCBoard:
         return data
 
     @classmethod
-    def from_json(cls, raw) -> 'NCBoard':
+    def from_json(cls, raw: str, many=bool) -> 'NCBoard':
         """Reads the NCBoard from a JSON string."""
-        schema = marshmallow_dataclass.class_schema(NCBoard)()
-        return schema.loads(raw, many=True)
+        schema = marshmallow_dataclass.class_schema(cls)()
+        return schema.loads(raw, many=many)
+
+
+@dataclass
+class NCBoard(NCBaseBoard):
+    """A Deck Board as returned by the get-all-boards API call."""
+    shared: int
+
+    class Meta:
+        unknown = EXCLUDE
 
 
 def _func_on_dict(
@@ -113,9 +131,7 @@ def _func_on_dict(
 
 def _timestamp_to_date(value: int) -> datetime.datetime:
     """Converts a given unix timestamp to a datetime object."""
-    rsl = datetime.datetime.fromtimestamp(value)
-    print(rsl)
-    return rsl
+    return datetime.datetime.fromtimestamp(value)
 
 
 def _timestamp_to_optional_date(value: int) -> Optional[str]:
