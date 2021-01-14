@@ -2,14 +2,15 @@
 Fetch abstracts all calls to the Nextcloud and Deck API.
 """
 
-from deck_cli.deck.models import NCBoard, NCBaseBoard, NCDeckStack
-
+import xml.etree.ElementTree as ET
 from typing import List
+
+from deck_cli.deck.models import NCBoard, NCBaseBoard, NCDeckStack
 
 import requests
 
 DECK_APP_URL = "apps/deck/api/v1.0"
-USER_DETAILS_URL = "ocs/v1.php/cloud/{user_uuid}"
+USER_DETAILS_URL = "ocs/v1.php/cloud/users/{user_uuid}"
 ALL_USER_BOARDS_URL = "boards"
 SINGLE_BOARD_URL = "boards/{board_id}"
 ALL_STACKS_URL = "boards/{board_id}/stacks"
@@ -29,19 +30,20 @@ class Fetch:
 
     def all_boards(self) -> List[NCBoard]:
         """Returns all boards of the given user."""
-        data = self.__send_get_request(ALL_USER_BOARDS_URL)
+        data = self.__send_get_request(
+            self.__deck_api_url(ALL_USER_BOARDS_URL))
         return NCBoard.from_json(data, True)
 
     def board_by_id(self, board_id: int) -> NCBaseBoard:
         """Returns a board by a given board id."""
         data = self.__send_get_request(
-            SINGLE_BOARD_URL.format(board_id=board_id))
+            self.__deck_api_url(SINGLE_BOARD_URL.format(board_id=board_id)))
         return NCBaseBoard.from_json(data, False)
 
     def stacks_by_board(self, board_id: int) -> NCDeckStack:
         """Returns all stacks of a given board with the given id."""
         data = self.__send_get_request(
-            ALL_STACKS_URL.format(board_id=board_id))
+            self.__deck_api_url(ALL_STACKS_URL.format(board_id=board_id)))
         print(NCDeckStack.from_json(data, True))
 
     def user_mail(self, name: str) -> str:
@@ -49,13 +51,17 @@ class Fetch:
         Returns a dictionary mapping the given user name to his/her
         mail address.
         """
+        api_url = USER_DETAILS_URL.format(user_uuid=name)
+        data = self.__send_get_request("{}/{}".format(self.base_url, api_url))
+        root = ET.fromstring(data)
+        return root.find("./data/email").text
 
-    def __send_get_request(self, postfix: str) -> str:
+    def __send_get_request(self, url: str) -> str:
         """
-        Calls the DECK API with the given URL postfix and returns
+        Calls a Nextcloud/Deck API with the given URL and returns
         the answer as a string.
         """
-        url = self.__deck_api_url(postfix)
+        print(url)
         rqs = requests.get(
             url,
             headers=self.__request_header(),

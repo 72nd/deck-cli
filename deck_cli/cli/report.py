@@ -1,5 +1,5 @@
 """
-Contains all functionality to create the reports from
+Contains all functionality to create the reports for
 the Desk content.
 """
 
@@ -17,4 +17,4 @@ class Report:
     def run(self):
         """Starts the generation of the report."""
         deck = Fetch(self.config.url, self.config.user, self.config.password)
-        print(deck.stacks_by_board(9))
+        print(deck.user_mail("julius"))
