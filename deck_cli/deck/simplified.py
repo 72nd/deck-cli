@@ -28,6 +28,15 @@ class User:
         )
 
 
+@dataclass
+class UserWithCards(User):
+    """
+    A User representation containing all cards for the given User. This is a
+    helper-class especially useful for creating reports as such documents are
+    often ordered per User.
+    """
+
+
 class CardState(Enum):
     """Describes the state of a task. Can be Backlog, In Progress, or Done."""
     BACKLOG = 0
@@ -91,20 +100,25 @@ class Stack:
         elif stack.title in done_stacks:
             state = CardState.DONE
 
+        cards: List[Card] = []
+        if stack.cards is not None:
+            cards = [Card.from_nc_card(x, state) for x in stack.cards]
+
         return Stack(
             identifier=stack.stack_id,
             name=stack.title,
-            cards=[Card.from_nc_card(x, state) for x in stack.cards],
+            cards=cards,
         )
 
 
+@dataclass
 class Board:
     """A Deck Board."""
     identifier: int
     name: str
     stacks: List[Stack]
 
-    @classmethod
+    @ classmethod
     def from_nc_board(
         cls,
         board: NCBoard,
@@ -113,16 +127,15 @@ class Board:
         done_stacks: List[str] = [],
     ) -> 'Board':
         """Returns a new Board instance based on a NCBoard."""
-        stacks: List[Stack] = [Stack.from_nc_stack(
-            x, backlog_stacks=backlog_stacks, progress_stacks=progress_stacks,
-            done_stacks=done_stacks) for x in board.stacks]
-
-        rsl = cls()
-        rsl.identifier = board.board_id
-        rsl.name = board.title
-        rsl.stacks = stacks
-
-        return rsl
+        return Board(
+            identifier=board.board_id,
+            name=board.title,
+            stacks=[Stack.from_nc_stack(
+                x, backlog_stacks=backlog_stacks,
+                progress_stacks=progress_stacks,
+                done_stacks=done_stacks)
+                for x in board.stacks]
+        )
 
 
 @ dataclass
@@ -139,8 +152,5 @@ class Deck:
             done_stacks: List[str]
     ) -> 'Deck':
         """Returns a new Deck instance from a list of NCBoards."""
-        rsl: List[Board] = []
-        for board in boards:
-            rsl.append(Board.from_nc_board(board, backlog_stacks,
-                                           progress_stacks, done_stacks))
-        return rsl
+        return [Board.from_nc_board(
+            x, backlog_stacks, progress_stacks, done_stacks) for x in boards]
