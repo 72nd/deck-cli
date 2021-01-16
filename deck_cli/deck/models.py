@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 import datetime
 from typing import List, Optional, Any
 
-from marshmallow import pre_load, EXCLUDE
+from marshmallow import pre_load
 import marshmallow_dataclass
 
 
@@ -86,51 +86,6 @@ class NCDeckPermissions:
 
 
 @dataclass
-class NCDeckBoardSettings:
-    """The settings of a Deck board."""
-    notify_due: str = field(metadata=dict(data_key="notify-due"))
-    calendar: bool
-
-
-@dataclass
-class NCBaseBoard(Base):
-    """
-    A Deck Board as it's returned by the query for a specific board
-    id. Get-all-boards at the other hand includes some extra fields
-    as implemented by the NCBoard.
-    """
-    title: str
-    owner: NCDeckUser
-    color: str
-    archived: bool
-    labels: List[NCDeckLabel]
-    shared_to: List[NCDeckSharedEntity] = field(metadata=dict(data_key="acl"))
-    permissions: NCDeckPermissions
-    users: List[NCDeckUser]
-    stacks: List[Any]
-    deleted_at: Optional[datetime.datetime] = field(
-        metadata=dict(data_key="deletedAt"))
-    last_modified: Optional[datetime.datetime] = field(
-        metadata=dict(data_key="lastModified"))
-    settings: NCDeckBoardSettings
-    board_id: int = field(metadata=dict(data_key="id"))
-    etag: str = field(metadata=dict(data_key="ETag"))
-
-    @pre_load
-    def convert_date(self, data, **kwargs):
-        """Converts all Unix dates to normal python datetime objects."""
-        _func_on_dict(data, _timestamp_to_optional_date,
-                      ["deletedAt", "lastModified"])
-        return data
-
-
-@dataclass
-class NCBoard(NCBaseBoard):
-    """A Deck Board as returned by the get-all-boards API call."""
-    shared: int
-
-
-@dataclass
 class NCDeckCard:
     """A single card of the Deck. Typically represents a task."""
     title: str
@@ -167,6 +122,13 @@ class NCDeckCard:
 
 
 @dataclass
+class NCDeckBoardSettings:
+    """The settings of a Deck board."""
+    notify_due: str = field(metadata=dict(data_key="notify-due"))
+    calendar: bool
+
+
+@dataclass
 class NCDeckStack(Base):
     """A Stack of a Deck Board."""
     title: str
@@ -186,6 +148,44 @@ class NCDeckStack(Base):
         _func_on_dict(data, _timestamp_to_optional_date,
                       ["deletedAt", "lastModified"])
         return data
+
+
+@dataclass
+class NCBaseBoard(Base):
+    """
+    A Deck Board as it's returned by the query for a specific board
+    id. Get-all-boards at the other hand includes some extra fields
+    as implemented by the NCBoard.
+    """
+    title: str
+    owner: NCDeckUser
+    color: str
+    archived: bool
+    labels: List[NCDeckLabel]
+    shared_to: List[NCDeckSharedEntity] = field(metadata=dict(data_key="acl"))
+    permissions: NCDeckPermissions
+    users: List[NCDeckUser]
+    stacks: List[NCDeckStack]
+    deleted_at: Optional[datetime.datetime] = field(
+        metadata=dict(data_key="deletedAt"))
+    last_modified: Optional[datetime.datetime] = field(
+        metadata=dict(data_key="lastModified"))
+    settings: NCDeckBoardSettings
+    board_id: int = field(metadata=dict(data_key="id"))
+    etag: str = field(metadata=dict(data_key="ETag"))
+
+    @pre_load
+    def convert_date(self, data, **kwargs):
+        """Converts all Unix dates to normal python datetime objects."""
+        _func_on_dict(data, _timestamp_to_optional_date,
+                      ["deletedAt", "lastModified"])
+        return data
+
+
+@dataclass
+class NCBoard(NCBaseBoard):
+    """A Deck Board as returned by the get-all-boards API call."""
+    shared: int
 
 
 def _func_on_dict(

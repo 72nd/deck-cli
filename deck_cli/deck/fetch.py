@@ -2,6 +2,7 @@
 Fetch abstracts all calls to the Nextcloud and Deck API.
 """
 
+from collections.abc import Callable
 import xml.etree.ElementTree as ET
 from typing import List
 
@@ -17,22 +18,64 @@ ALL_STACKS_URL = "boards/{board_id}/stacks"
 SINGLE_CARD_URL = "boards/{board_id}/stacks/{stack_id}/cards/{card_id}"
 
 
+ProgressCallback = Callable[[int, int, str], ]
+"""
+Called by the Fetch class before doing a request. Can be used to inform the
+user about the progress. The following parameters are provided:
+    1. The number of the current step.
+    2. The total number of steps needed to complete the task. 0 if unknown.
+    3. A short description of the task.
+"""
+
+
 class Fetch:
-    """Contains all calls to the Nextcloud and Deck API."""
+    """
+    Contains all calls to the Nextcloud and Deck API.
+
+    The progress_callback can be used to display a update to the user
+    when doing multiple API calls at once.
+    """
     base_url: str
     user: str
     password: str
+    progress_callback: ProgressCallback
 
-    def __init__(self, base_url: str, user: str, password: str):
+    def __init__(
+        self,
+        base_url: str,
+        user: str,
+        password: str,
+        progress_callback: ProgressCallback = lambda *args: None
+    ):
         self.base_url = base_url
         self.user = user
         self.password = password
+        self.progress_callback = progress_callback
 
     def all_boards(self) -> List[NCBoard]:
-        """Returns all boards of the given user."""
+        """Returns all boards for the given user."""
+        self.progress_callback(1, 1, "requests overview over all boards")
         data = self.__send_get_request(
             self.__deck_api_url(ALL_USER_BOARDS_URL))
         return NCBoard.from_json(data, True)
+
+    def all_boards_with_stacks(self) -> List[NCBoard]:
+        """
+        Returns all boards for the given user, fetches for all Boards their
+        Stacks and inserts them into the resulting data structure.
+        """
+        self.progress_callback(1, 0, "requests overview over all boards")
+        data = self.__send_get_request(
+            self.__deck_api_url(ALL_USER_BOARDS_URL))
+        boards = NCBoard.from_json(data, True)
+        i: int = 1
+        for board in boards:
+            self.progress_callback(
+                i, len(boards),
+                "request stacks for {} board".format(board.title))
+            board.stacks = self.stacks_by_board(board.board_id)
+            i += 1
+        return boards
 
     def board_by_id(self, board_id: int) -> NCBaseBoard:
         """Returns a board by a given board id."""
@@ -40,11 +83,11 @@ class Fetch:
             self.__deck_api_url(SINGLE_BOARD_URL.format(board_id=board_id)))
         return NCBaseBoard.from_json(data, False)
 
-    def stacks_by_board(self, board_id: int) -> NCDeckStack:
+    def stacks_by_board(self, board_id: int) -> List[NCDeckStack]:
         """Returns all stacks of a given board with the given id."""
         data = self.__send_get_request(
             self.__deck_api_url(ALL_STACKS_URL.format(board_id=board_id)))
-        print(NCDeckStack.from_json(data, True))
+        return NCDeckStack.from_json(data, True)
 
     def user_mail(self, name: str) -> str:
         """
