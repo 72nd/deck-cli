@@ -32,6 +32,21 @@ class Config:
             description="Name of boards to be ignored",
             default=["Personal"])
     )
+    backlog_stacks: List[str] = field(
+        metadata=dict(
+            description="Name of stacks considered to be a backlog",
+            default=["Backlog"])
+    )
+    progress_stacks: List[str] = field(
+        metadata=dict(
+            description="Stacks containing tasks in the progress",
+            default=["In Progress"])
+    )
+    done_stacks: List[str] = field(
+        metadata=dict(
+            description="Stacks containing done tasks",
+            default=["Done"])
+    )
     mail_cache_path: str = field(
         metadata=dict(
             description="Path to mail-address cache",
@@ -55,6 +70,9 @@ class Config:
             user="usr",
             password="secret",
             ignore_board=["Personal"],
+            backlog_stacks=["Backlog"],
+            progress_stacks=["In Progress"],
+            done_stacks=["Done"],
             mail_cache_path="check-cache.yaml"
         )
 
