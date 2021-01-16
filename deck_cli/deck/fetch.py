@@ -61,7 +61,6 @@ class Fetch:
         Calls a Nextcloud/Deck API with the given URL and returns
         the answer as a string.
         """
-        print(url)
         rqs = requests.get(
             url,
             headers=self.__request_header(),
