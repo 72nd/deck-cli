@@ -10,7 +10,7 @@ from enum import Enum
 from typing import List, Optional
 
 from deck_cli.deck.models import NCBoard, NCDeckStack, NCDeckCard
-from deck_cli.deck.models import NCDeckAssignedUser
+from deck_cli.deck.models import NCDeckUser, NCDeckAssignedUser
 
 
 @dataclass
@@ -20,6 +20,14 @@ class User:
     full_name: str
 
     @classmethod
+    def from_nc_deck_user(cls, user: NCDeckUser) -> 'User':
+        """Returns a new User instance based on a Deck User."""
+        return User(
+            username=user.uid,
+            full_name=user.display_name,
+        )
+
+    @classmethod
     def from_nc_assigned_user(cls, user: NCDeckAssignedUser) -> 'User':
         """Returns a new User instance based on a Deck assigned User."""
         return User(
@@ -27,14 +35,13 @@ class User:
             full_name=user.participant.display_name,
         )
 
+    def __eq__(self, o) -> bool:
+        if not isinstance(o, User):
+            return False
+        return self.username == o.username and self.full_name == self.full_name
 
-@dataclass
-class UserWithCards(User):
-    """
-    A User representation containing all cards for the given User. This is a
-    helper-class especially useful for creating reports as such documents are
-    often ordered per User.
-    """
+    def __hash__(self):
+        return hash((self.username, self.full_name))
 
 
 class CardState(Enum):
@@ -44,7 +51,7 @@ class CardState(Enum):
     DONE = 2
 
 
-@ dataclass
+@dataclass
 class Card:
     """A Deck Card."""
     identifier: int
@@ -55,12 +62,16 @@ class Card:
     duedate: Optional[datetime]
     state: Optional[CardState]
     archived: bool
+    board_name: str
+    stack_name: str
 
     @ classmethod
     def from_nc_card(
         cls,
         card: NCDeckCard,
-        state: Optional[CardState]
+        state: Optional[CardState],
+        board_name: str,
+        stack_name: str
     ) -> 'Card':
         """Returns a new instance of Card based on the given Deck Card."""
         return Card(
@@ -73,20 +84,23 @@ class Card:
             duedate=card.duedate,
             state=state,
             archived=card.archived,
+            board_name=board_name,
+            stack_name=stack_name,
         )
 
 
-@ dataclass
+@dataclass
 class Stack:
     """A Deck Stack containing Cards."""
     identifier: int
     name: str
     cards: List[Card]
 
-    @ classmethod
+    @classmethod
     def from_nc_stack(
         cls,
         stack: NCDeckStack,
+        board_name: str,
         backlog_stacks: List[str] = [],
         progress_stacks: List[str] = [],
         done_stacks: List[str] = [],
@@ -102,13 +116,21 @@ class Stack:
 
         cards: List[Card] = []
         if stack.cards is not None:
-            cards = [Card.from_nc_card(x, state) for x in stack.cards]
+            cards = [Card.from_nc_card(
+                x, state, board_name, stack.title) for x in stack.cards]
 
         return Stack(
             identifier=stack.stack_id,
             name=stack.title,
             cards=cards,
         )
+
+    def assigned_users(self) -> List[User]:
+        """Returns all Users with Tasks assigned in this Stack."""
+        rsl: List[User] = []
+        for card in self.cards:
+            rsl = rsl + card.assigned_users
+        return list(set(rsl))
 
 
 @dataclass
@@ -118,7 +140,7 @@ class Board:
     name: str
     stacks: List[Stack]
 
-    @ classmethod
+    @classmethod
     def from_nc_board(
         cls,
         board: NCBoard,
@@ -131,19 +153,29 @@ class Board:
             identifier=board.board_id,
             name=board.title,
             stacks=[Stack.from_nc_stack(
-                x, backlog_stacks=backlog_stacks,
+                x,
+                board.title,
+                backlog_stacks=backlog_stacks,
                 progress_stacks=progress_stacks,
                 done_stacks=done_stacks)
                 for x in board.stacks]
         )
 
+    def assigned_users(self) -> List[User]:
+        """Returns all Users with Tasks assigned in this Board."""
+        rsl: List[User] = []
+        for stack in self.stacks:
+            rsl = rsl + stack.assigned_users()
+        return list(set(rsl))
 
-@ dataclass
+
+@dataclass
 class Deck:
     """All Boards of a deck combined. Also contains the users."""
     users: List[User]
+    boards: List[Board]
 
-    @ classmethod
+    @classmethod
     def from_nc_boards(
             cls,
             boards: List[NCBoard],
@@ -152,5 +184,36 @@ class Deck:
             done_stacks: List[str]
     ) -> 'Deck':
         """Returns a new Deck instance from a list of NCBoards."""
-        return [Board.from_nc_board(
-            x, backlog_stacks, progress_stacks, done_stacks) for x in boards]
+        boards = [Board.from_nc_board(
+            x,
+            backlog_stacks,
+            progress_stacks,
+            done_stacks) for x in boards
+        ]
+
+        users: List[User] = []
+        for board in boards:
+            users = users + board.assigned_users()
+
+        return Deck(
+            users=list(set(users)),
+            boards=boards,
+        )
+
+
+@dataclass
+class UserWithCards(User):
+    """
+    A User representation containing all cards for the given User. This is a
+    helper-class especially useful for creating reports as such documents are
+    often ordered per User.
+    """
+    cards: List[Card]
+
+    @classmethod
+    def from_deck(cls, deck: Deck) -> List['UserWithCards']:
+        """
+        Returns a list of UserWithCards based on a (simplified) Deck object.
+        """
+        rsl: List[cls] = []
+        return rsl
