@@ -171,14 +171,14 @@ class NCDeckStack(Base):
     """A Stack of a Deck Board."""
     title: str
     board_id: int = field(metadata=dict(data_key="boardId"))
-    cards: Optional[List[NCDeckCard]]
     deleted_at: Optional[datetime.datetime] = field(
         metadata=dict(data_key="deletedAt"))
     last_modified: Optional[datetime.datetime] = field(
         metadata=dict(data_key="lastModified"))
-
-    class Meta:
-        unknown = EXCLUDE
+    cards: Optional[List[NCDeckCard]]
+    order: int
+    stack_id: int = field(metadata=dict(data_key="id"))
+    etag: str = field(metadata=dict(data_key="ETag"))
 
     @pre_load
     def convert_date(self, data, **kwargs):
