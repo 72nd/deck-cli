@@ -78,7 +78,6 @@ class Config:
 
     def to_yaml(self) -> str:
         """Returns the config data-class as a YAML string."""
-        #cfg = Config.Schema().dumps(self)
         schema = marshmallow_dataclass.class_schema(Config)()
         cfg = schema.dump(self)
         return yaml.dump(cfg)

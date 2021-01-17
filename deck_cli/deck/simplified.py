@@ -7,7 +7,8 @@ redundancy.
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from itertools import chain
+from typing import Dict, List, Optional
 
 from deck_cli.deck.models import NCBoard, NCDeckStack, NCDeckCard
 from deck_cli.deck.models import NCDeckUser, NCDeckAssignedUser
@@ -168,6 +169,10 @@ class Board:
             rsl = rsl + stack.assigned_users()
         return list(set(rsl))
 
+    def cards(self) -> List[Card]:
+        """Returns a list of all Cards of this board."""
+        return list(chain.from_iterable([x.cards for x in self.stacks]))
+
 
 @dataclass
 class Deck:
@@ -200,8 +205,11 @@ class Deck:
             boards=boards,
         )
 
+    def cards(self) -> List[Card]:
+        """Returns a list of all Cards in all Boards."""
+        return list(chain.from_iterable([x.cards() for x in self.boards]))
 
-@dataclass
+
 class UserWithCards(User):
     """
     A User representation containing all cards for the given User. This is a
@@ -210,10 +218,21 @@ class UserWithCards(User):
     """
     cards: List[Card]
 
+    def __init__(self, user: User) -> 'UserWithCards':
+        self.username = user.username
+        self.full_name = user.full_name
+        self.cards = []
+
     @classmethod
     def from_deck(cls, deck: Deck) -> List['UserWithCards']:
         """
         Returns a list of UserWithCards based on a (simplified) Deck object.
         """
-        rsl: List[cls] = []
-        return rsl
+        rsl: Dict[str, cls] = {}
+        for user in deck.users:
+            rsl[user.username] = UserWithCards(user)
+
+        for card in deck.cards():
+            for usr in card.assigned_users:
+                rsl[usr.username] = card
+        return list(rsl.values())

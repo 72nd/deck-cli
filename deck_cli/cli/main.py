@@ -41,6 +41,12 @@ def config(path: click.File):
 
 
 @click.command()
+@click.argument("PATH", type.click.File("w"))
+def fetch(path: click.File):
+    """Fetches the Deck from the API and saves to the given path."""
+
+
+@click.command()
 def mail():
     """The mail command sends a notification mail to all users."""
 
@@ -53,11 +59,13 @@ def mail_template():
 
 @click.command()
 @click.argument("CONFIG", type=click.File("r"))
-def report(config: click.File):
+@click.option("-t", "--template", type=click.File("r"),
+              help="path to template file")
+def report(config: click.File, template: click.File):
     """The report command creates a overview over all tasks."""
     data = ConfigClass.from_yaml(config)
-    report = Report(data)
-    report.run(on_progress)
+    rep = Report(data)
+    rep.simple_report(on_progress)
 
 
 @click.command()
@@ -83,4 +91,5 @@ cli.add_command(add)
 cli.add_command(config)
 cli.add_command(mail)
 cli.add_command(mail_template)
+cli.add_command(report)
 cli.add_command(report)
