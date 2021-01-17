@@ -5,7 +5,7 @@ redundancy.
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from itertools import chain
 from typing import Dict, List, Optional
@@ -209,30 +209,53 @@ class Deck:
         """Returns a list of all Cards in all Boards."""
         return list(chain.from_iterable([x.cards() for x in self.boards]))
 
+    def overdue_cards(self) -> List[Card]:
+        """Returns all Cards which are overdue and not in a done Stack."""
+        cards = self.cards()
+        now = datetime.now(tz=timezone.utc)
+        return [card for card in cards if card.duedate
+                is not None and card.duedate < now]
 
+
+@dataclass
 class UserWithCards(User):
     """
-    A User representation containing all cards for the given User. This is a
-    helper-class especially useful for creating reports as such documents are
-    often ordered per User.
+    A User representation containing all cards for the given User. The cards
+    are sorted by their state in differen lists. This is a helper-class
+    especially useful for creating reports as such documents are often ordered
+    per User.
     """
-    cards: List[Card]
+    backlog_cards: List[Card]
+    progress_cards: List[Card]
+    done_cards: List[Card]
+    other_cards: List[Card]
 
     def __init__(self, user: User) -> 'UserWithCards':
         self.username = user.username
         self.full_name = user.full_name
-        self.cards = []
+        self.backlog_cards = []
+        self.progress_cards = []
+        self.done_cards = []
+        self.other_cards = []
 
     @classmethod
     def from_deck(cls, deck: Deck) -> List['UserWithCards']:
         """
         Returns a list of UserWithCards based on a (simplified) Deck object.
         """
-        rsl: Dict[str, cls] = {}
+        rsl: Dict[str, 'UserWithCards'] = {}
         for user in deck.users:
             rsl[user.username] = UserWithCards(user)
 
-        for card in deck.cards():
+        cards = deck.cards()
+        for card in cards:
             for usr in card.assigned_users:
-                rsl[usr.username] = card
+                if card.state == CardState.BACKLOG:
+                    rsl[usr.username].backlog_cards.append(card)
+                elif card.state == CardState.IN_PROGRESS:
+                    rsl[usr.username].progress_cards.append(card)
+                elif card.state == CardState.DONE:
+                    rsl[usr.username].done_cards.append(card)
+                else:
+                    rsl[usr.username].other_cards.append(card)
         return list(rsl.values())
