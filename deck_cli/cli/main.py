@@ -129,6 +129,7 @@ def mail_template():
     "fmt",
     type=click.Choice(["plain", "markdown"], case_sensitive=False),
     help="choose output format",
+    default="plain"
 )
 @ pass_state
 def report(

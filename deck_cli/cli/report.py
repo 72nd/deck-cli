@@ -31,7 +31,7 @@ class ReportOptions:
 
     def __init__(self, blocks: click.Choice, fmt: click.Choice):
         self.fmt = ReportFromat.PLAIN
-        if fmt == "mardkown":
+        if fmt == "markdown":
             self.fmt = ReportFromat.MARKDOWN
         self.do_overdue = "overdue" in blocks
         self.do_overview = "overview" in blocks
@@ -68,9 +68,8 @@ class Report:
         overdue: List[Card] = []
         if self.options.do_overdue:
             overdue = deck.overdue_cards
-
         tpl_raw = importlib.resources.read_text(
-            "deck_cli.cli", self.options.fmt.value)
+            "deck_cli.cli.templates", self.options.fmt.value)
         tpl = Template(tpl_raw)
         print(tpl.render(options=self.options, overdue=overdue, users=users))
 
