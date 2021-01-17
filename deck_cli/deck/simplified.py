@@ -51,6 +51,13 @@ class CardState(Enum):
     IN_PROGRESS = 1
     DONE = 2
 
+    def __str__(self) -> str:
+        if self == CardState.BACKLOG:
+            return "todo"
+        elif self == CardState.IN_PROGRESS:
+            return "prgs"
+        return "done"
+
 
 @dataclass
 class Card:
@@ -66,7 +73,7 @@ class Card:
     board_name: str
     stack_name: str
 
-    @ classmethod
+    @classmethod
     def from_nc_card(
         cls,
         card: NCDeckCard,
@@ -88,6 +95,16 @@ class Card:
             board_name=board_name,
             stack_name=stack_name,
         )
+
+    @classmethod
+    def by_board(cls, cards: List['Card']) -> Dict[str, List['Card']]:
+        """Takes a list of Cards and sorts them by their Bord in a dict."""
+        rsl: Dict[str, List[cls]] = {}
+        for card in cards:
+            if card.board_name not in rsl:
+                rsl[card.board_name] = []
+            rsl[card.board_name].append(card)
+        return rsl
 
 
 @dataclass

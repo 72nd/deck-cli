@@ -1,1 +1,78 @@
-hoi
+{%- macro on_not_none(var) -%}
+{%- if var is not none -%}
+{{ caller() }}
+{%- endif -%}
+{%- endmacro -%}
+
+{%- macro fmt_date(date) -%}
+{{ date.strftime('%d. %b. %Y, %H:%M') }}
+{%- endmacro -%}
+
+{%- macro render_progres(card) -%}
+`{{ card.state | upper }}`
+{%- endmacro -%}
+
+{%- macro render_overdue(card) -%}
+{%- call on_not_none(card.duedate) -%}
+{% if card.duedate < now %}**OVERDUE**{% endif %}
+{%- endcall -%}
+{%- endmacro -%}
+
+{%- macro render_assigned_users(card) -%}
+_{% for user in card.assigned_users -%}{{ user.full_name }}, {% endfor -%}_
+{%- endmacro -%}
+
+{%- macro render_due_date(card) -%}
+{%- call on_not_none(card.duedate) -%}
+ Due on {{ fmt_date(card.duedate) }}.
+{%- endcall -%}
+{%- endmacro -%}
+
+{%- macro render_card(card) -%}
+- {{ render_progres(card) }}{{ render_overdue(card) }} {{ card.name }}. {{ render_assigned_users(card) }}. {{ render_due_date(card) }}
+{%- endmacro -%}
+
+{%- macro overdue_block(overdue) -%}
+## Overdue Tasks
+
+{% for board, cards in overdue.items() %}
+### {{ board }}
+
+{% for card in cards -%}
+{{ render_card(card) }} 
+{% endfor -%}
+{% endfor %}
+{%- endmacro -%}
+
+{% macro overview_block(users) %}
+
+## Overview per User
+{% for user in users %}
+
+### {{ user.full_name }}
+
+{% for card in user.backlog_cards -%}
+{{ render_card(card) }}
+{% endfor -%}
+{% for card in user.progress_cards -%}
+{{ render_card(card) }}
+{% endfor -%}
+{% for card in user.done_cards -%}
+{{ render_card(card) }}
+{% endfor -%}
+{% for card in user.other_cards -%}
+{{ render_card(card) }}
+{% endfor -%}
+{% endfor %}
+{%- endmacro -%}
+
+{# MAIN #}
+# Deck report {{ fmt_date(now) }}
+
+{% if options.do_overdue -%}
+{{ overdue_block(overdue) }}
+{%- endif -%}
+
+{% if options.do_overview -%}
+{{ overview_block(users) }}
+{%- endif -%}

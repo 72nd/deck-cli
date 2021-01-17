@@ -2,6 +2,7 @@
 Contains all functionality to create the reports for
 the Desk content.
 """
+from datetime import datetime, timezone
 from enum import Enum
 from typing import List, Optional
 import importlib.resources
@@ -67,11 +68,16 @@ class Report:
         users = UserWithCards.from_deck(deck)
         overdue: List[Card] = []
         if self.options.do_overdue:
-            overdue = deck.overdue_cards
+            overdue = deck.overdue_cards()
         tpl_raw = importlib.resources.read_text(
             "deck_cli.cli.templates", self.options.fmt.value)
         tpl = Template(tpl_raw)
-        print(tpl.render(options=self.options, overdue=overdue, users=users))
+        print(tpl.render(
+            now=datetime.now(tz=timezone.utc),
+            options=self.options,
+            overdue=Card.by_board(overdue),
+            users=users
+        ))
 
     def __fetch_deck(
             self,
