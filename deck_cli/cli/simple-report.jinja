@@ -1,0 +1,30 @@
+{%- macro on_not_none(var) -%}
+{%- if var is not none -%}
+{{ caller() }}
+{%- endif -%}
+{%- endmacro -%}
+
+{%- macro fmt_date(date) -%}
+{{ date.strftime('%d. %b. %Y at %H:%M') }}
+{%- endmacro -%}
+
+{%- macro overdue_block(overdue) -%}
+
+{%- endmacro -%}
+
+{%- if options.do_overdue -%}
+{{ overdue_block(overdue) }}
+{%- endif -%}
+
+{#
+{% for user in users %}
+{{ user.full_name | upper }}
+{% for i in range(0, (user.full_name | length)) -%}={%- endfor %}
+
+{%- for card in user.cards %}
+- {{ card.name }} {% call on_not_none(card.duedate) -%}
+due on {{ fmt_date(card.duedate) }}
+{%- endcall -%}
+{% endfor %}
+{% endfor %}
+#}
