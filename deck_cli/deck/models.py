@@ -197,6 +197,9 @@ class NCCardPost:
     description: Optional[str] = None
     duedate: Optional[datetime.datetime] = None
 
+    class Meta:
+        ordered = True
+
     @post_dump
     def convert_date(self, data, **kwargs):
         """Converts the dates to ISO-8601."""
@@ -212,7 +215,6 @@ class NCCardPost:
     def dump(self):
         """Dumps the data to a dict."""
         schema = marshmallow_dataclass.class_schema(NCCardPost)()
-        print(schema.dumps(self))
         return schema.dump(self)
 
 
