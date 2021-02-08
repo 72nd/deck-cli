@@ -109,9 +109,7 @@ class Fetch:
             )
         )
         print(api_url)
-        print(card)
-        rqs = requests.post(api_url, card.dump())
-        print(rqs.reason)
+        self.__send_post_request(api_url, card.dump())
 
     def __send_get_request(self, url: str) -> str:
         """
@@ -121,8 +119,20 @@ class Fetch:
         rqs = requests.get(
             url,
             headers=self.__request_header(),
-            auth=(self.user, self.password))
+            auth=(self.user, self.password)
+        )
         return rqs.text
+
+    def __send_post_request(self, url: str, data):
+        """Send POST Request to the API with a given data body."""
+        print(data) # <-- HERE, check Order
+        rqs = requests.post(
+            url,
+            data=data,
+            headers=self.__request_header(),
+            auth=(self.user, self.password)
+        )
+        print(rqs.text)
 
     def __deck_api_url(self, postfix: str) -> str:
         """Returns the Deck API URL with a given postfix."""
