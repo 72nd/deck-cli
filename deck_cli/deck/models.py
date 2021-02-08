@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 import datetime
 from typing import List, Optional, Any
 
-from marshmallow import pre_load
+from marshmallow import pre_dump, pre_load
 import marshmallow_dataclass
 
 
@@ -188,6 +188,26 @@ class NCBoard(NCBaseBoard):
     shared: int
 
 
+@dataclass
+class NCCardPost:
+    """Post request body for a create new Card API call."""
+    title: str
+    type: str = "plain"
+    order: int = 999
+    description: Optional[str] = None
+    duedate: Optional[datetime.datetime] = None
+
+    @pre_dump
+    def convert_date(self, data, **kwargs):
+        """Converts the dates to ISO-8601."""
+        _func_on_dict(data, datetime_to_iso_8601, ["duedate"])
+
+    def dump(self):
+        """Dumps the data to a dict."""
+        schema = marshmallow_dataclass.class_schema(NCCardPost)()
+        return schema.dump(self)
+
+
 def _func_on_dict(
         data: dict[str, Any],
         func: Callable[[int], Any],
@@ -216,3 +236,10 @@ def _timestamp_to_optional_date(value: int) -> Optional[str]:
         return None
     # TODO: Remove this hack.
     return str(_timestamp_to_date(value))
+
+
+def datetime_to_iso_8601(value: datetime) -> Optional[str]:
+    """Formats a datetime to a ISO 8601 date string."""
+    if not value:
+        return None
+    return value.isoformat()

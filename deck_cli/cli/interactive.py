@@ -1,6 +1,7 @@
 """
 This module handles the interactive CLI interaction with Deck.
 """
+from datetime import datetime
 from typing import Dict, List, Optional
 
 from deck_cli.cli.config import Config
@@ -10,6 +11,10 @@ from deck_cli.deck.models import NCBoard, NCDeckStack
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import Completer, Completion, FuzzyCompleter
 from prompt_toolkit.validation import Validator, ValidationError
+
+
+INPUT_DATEFORMAT = "%Y-%m-%d-%H%M"
+"""Input format used for datetime input."""
 
 
 class IBoards(Completer, Validator):
@@ -112,6 +117,32 @@ class IStacks(Completer, Validator):
         )
 
 
+class TitleValidator(Validator):
+    """
+    A Card title is not allowed to be empty and is limited to 255 characters.
+    """
+
+    def validate(self, document):
+        if len(document.text) > 255:
+            raise ValidationError(
+                message="Title length cannot exceed 255 characters"
+            )
+        if document.text == "":
+            raise ValidationError(message="Title is not allowed to be empty")
+
+
+class InputDateValidator(Validator):
+    """Validates the input against the datetime input format."""
+
+    def validate(self, document):
+        try:
+            datetime.strptime(document.text, INPUT_DATEFORMAT)
+        except ValueError:
+            raise ValidationError(
+                message="date format has to be YYYY-MM-DD HHMM"
+            )
+
+
 class Interactive:
     """
     Handles the interactive interaction with Deck via the CLI.
@@ -133,7 +164,17 @@ class Interactive:
 
     def add(self):
         """Interactively adds a new card to the Deck."""
+        title = self.__session.prompt(
+            "Enter the Card title: ",
+            validator=TitleValidator()
+        )
+        description = self.__session.prompt(
+            "Enter a (optional) description: ",
+            validator=None
+        )
         board = self.boards.select(self.__session)
-        print(board)
         stack = self.stacks.select(board.board_id, self.__session)
-        print(stack)
+        duedate = self.__session.prompt(
+            "Enter a (optional) due-date: ",
+            validator=InputDateValidator(),
+        )

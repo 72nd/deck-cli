@@ -6,7 +6,7 @@ from collections.abc import Callable
 import xml.etree.ElementTree as ET
 from typing import List
 
-from deck_cli.deck.models import NCBoard, NCBaseBoard, NCDeckStack
+from deck_cli.deck.models import NCBoard, NCBaseBoard, NCDeckStack, NCCardPost
 
 import requests
 
@@ -98,6 +98,16 @@ class Fetch:
         data = self.__send_get_request("{}/{}".format(self.base_url, api_url))
         root = ET.fromstring(data)
         return root.find("./data/email").text
+
+    def add_card(self, board_id: int, stack_id: int, card: NCCardPost):
+        """Adds a given card to the Deck via the API."""
+        api_url = SINGLE_CARD_URL.format(
+            board_id=board_id,
+            stack_id=stack_id,
+            card_id=""
+        )
+        rqs = requests.post(api_url, card.dump())
+        print(rqs)
 
     def __send_get_request(self, url: str) -> str:
         """
