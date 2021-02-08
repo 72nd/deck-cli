@@ -91,14 +91,14 @@ class Report:
             print(rsl)
 
     def __fetch_deck(self) -> List[UserWithCards]:
-        deck = Fetch(
+        f = Fetch(
             self.config.url,
             self.config.user,
             self.config.password,
             progress_callback=self.on_progress
         )
         return Deck.from_nc_boards(
-            deck.all_boards_with_stacks(),
+            f.all_boards_with_stacks(),
             self.config.backlog_stacks,
             self.config.progress_stacks,
             self.config.done_stacks

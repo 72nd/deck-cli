@@ -5,7 +5,7 @@ import logging
 
 from deck_cli.cli.config import Config as ConfigClass
 from deck_cli.cli import fetch
-from deck_cli.cli.add import Add
+from deck_cli.cli.interactive import Interactive
 from deck_cli.cli.query import Query
 from deck_cli.cli.report import Report
 
@@ -63,10 +63,12 @@ def cli(ctx, debug, muted):
     "CONFIG",
     type=click.File("r"),
 )
-def add(config):
+@pass_state
+def add(state, config):
     """Add a new card to a deck."""
     cfg = ConfigClass.from_yaml(config)
-    add = Add(cfg)
+    intr = Interactive(cfg, state.on_progress)
+    intr.add()
 
 
 @click.command()
