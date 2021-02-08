@@ -1,8 +1,16 @@
+certifi==2020.12.5
+chardet==4.0.0
 click==7.1.2
--e git+git@github.com:72nd/deck-cli.git@5f0ba061b525462c8f0db3f56d94785ff2503d5c#egg=deck_cli
+-e git+git@github.com:72nd/deck-cli.git@a10c9d86ec8d4b766b94f142891b2de25ce010ef#egg=deck_cli
+idna==2.10
+Jinja2==2.11.2
+MarkupSafe==1.1.1
 marshmallow==3.10.0
 marshmallow-dataclass==8.3.0
+marshmallow-enum==1.5.1
 mypy-extensions==0.4.3
 PyYAML==5.3.1
+requests==2.25.1
 typing-extensions==3.7.4.3
 typing-inspect==0.6.0
+urllib3==1.26.2

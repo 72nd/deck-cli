@@ -27,7 +27,6 @@ class ReportOptions:
     fmt: ReportFromat
     do_overdue: bool
     do_overview: bool
-    do_per_user: bool
     do_stats: bool
 
     def __init__(self, blocks: click.Choice, fmt: click.Choice):
@@ -36,7 +35,6 @@ class ReportOptions:
             self.fmt = ReportFromat.MARKDOWN
         self.do_overdue = "overdue" in blocks
         self.do_overview = "overview" in blocks
-        self.do_per_user = "per-user" in blocks
         self.do_stats = "stats" in blocks
 
 
@@ -45,6 +43,8 @@ class Report:
     config: 'Config'
     dump: Optional[click.File]
     options: ReportOptions
+    output: Optional[click.File]
+    on_progress: ProgressCallback
 
     def __init__(
         self,
@@ -52,16 +52,22 @@ class Report:
         config: Config,
         dump: Optional[click.File],
         fmt: click.Choice,
+        output: Optional[click.File],
+        on_progress: ProgressCallback
     ):
         self.config = config
         self.dump_file = dump
         self.options = ReportOptions(blocks, fmt)
+        self.output = output
+        self.on_progress = lambda *args: None
+        if output is not None:
+            self.on_progress = on_progress
 
-    def render(self, on_progress: ProgressCallback):
+    def render(self):
         """Fetches the data and renders the requested report."""
         deck: Deck
         if self.dump_file is None:
-            deck = self.__fetch_deck(on_progress)
+            deck = self.__fetch_deck()
         else:
             deck = fetch.load_deck_from_file(self.dump_file)
 
@@ -72,19 +78,25 @@ class Report:
         tpl_raw = importlib.resources.read_text(
             "deck_cli.cli.templates", self.options.fmt.value)
         tpl = Template(tpl_raw)
-        print(tpl.render(
+        rsl = tpl.render(
             now=datetime.now(tz=timezone.utc),
             options=self.options,
             overdue=Card.by_board(overdue),
             users=users
-        ))
+        )
 
-    def __fetch_deck(
-            self,
-            on_progress: ProgressCallback
-    ) -> List[UserWithCards]:
-        deck = Fetch(self.config.url, self.config.user,
-                     self.config.password, progress_callback=on_progress)
+        if self.output is not None:
+            self.output.write(rsl)
+        else:
+            print(rsl)
+
+    def __fetch_deck(self) -> List[UserWithCards]:
+        deck = Fetch(
+            self.config.url,
+            self.config.user,
+            self.config.password,
+            progress_callback=self.on_progress
+        )
         return Deck.from_nc_boards(
             deck.all_boards_with_stacks(),
             self.config.backlog_stacks,

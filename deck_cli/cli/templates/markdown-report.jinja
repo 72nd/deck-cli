@@ -14,12 +14,22 @@
 
 {%- macro render_overdue(card) -%}
 {%- call on_not_none(card.duedate) -%}
-{% if card.duedate < now %}**OVERDUE**{% endif %}
+{% if card.duedate < now %}**OVERDUE** {% endif %}
 {%- endcall -%}
 {%- endmacro -%}
 
 {%- macro render_assigned_users(card) -%}
-_{% for user in card.assigned_users -%}{{ user.full_name }}, {% endfor -%}_
+{%- for user in card.assigned_users %}
+{%- if loop.index == 1 and loop.length == 1 -%}
+_{{ user.full_name }}._
+{%- elif loop.index == 1 -%}
+_{{ user.full_name }}
+{%- elif loop.index == loop.length  -%}
+, {{ user.full_name }}._
+{%- else -%}
+, {{ user.full_name }}
+{%- endif -%}
+{% endfor %}
 {%- endmacro -%}
 
 {%- macro render_due_date(card) -%}
@@ -29,7 +39,7 @@ _{% for user in card.assigned_users -%}{{ user.full_name }}, {% endfor -%}_
 {%- endmacro -%}
 
 {%- macro render_card(card) -%}
-- {{ render_progres(card) }}{{ render_overdue(card) }} {{ card.name }}. {{ render_assigned_users(card) }}. {{ render_due_date(card) }}
+- {{ render_progres(card) }}{{ render_overdue(card) }}− {{ card.name }}. {{ render_assigned_users(card) }} {{ render_due_date(card) }}
 {%- endmacro -%}
 
 {%- macro overdue_block(overdue) -%}
@@ -66,6 +76,14 @@ _{% for user in card.assigned_users -%}{{ user.full_name }}, {% endfor -%}_
 {% endfor %}
 {%- endmacro -%}
 
+{% macro stats_block(users) %}
+
+## Useless Stats
+
+_Not implemented yet._
+
+{%- endmacro -%}
+
 {# MAIN #}
 # Deck report {{ fmt_date(now) }}
 
@@ -75,4 +93,8 @@ _{% for user in card.assigned_users -%}{{ user.full_name }}, {% endfor -%}_
 
 {% if options.do_overview -%}
 {{ overview_block(users) }}
+{%- endif -%}
+
+{% if options.do_stats -%}
+{{ stats_block(users) }}
 {%- endif -%}

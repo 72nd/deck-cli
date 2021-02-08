@@ -5,6 +5,7 @@ import logging
 
 from deck_cli.cli.config import Config as ConfigClass
 from deck_cli.cli import fetch
+from deck_cli.cli.query import Query
 from deck_cli.cli.report import Report
 
 import click
@@ -112,18 +113,18 @@ def mail_template():
     "-b",
     "--blocks",
     type=click.Choice(
-        ["overdue", "overview", "per-user", "stats"],
+        ["overdue", "overview", "stats"],
         case_sensitive=False,
     ),
     multiple=True,
-    default=["overdue", "overview", "per-user"],
+    default=["overdue", "overview", "stats"],
 )
-@ click.option(
+@click.option(
     "--dump",
     type=click.File("r"),
     help="path to Deck API dump",
 )
-@ click.option(
+@click.option(
     "-f",
     "--format",
     "fmt",
@@ -131,21 +132,54 @@ def mail_template():
     help="choose output format",
     default="plain"
 )
-@ pass_state
+@click.option(
+    "-o",
+    "--output",
+    type=click.File("w"),
+    help="path to output file",
+)
+@pass_state
 def report(
     state,
     blocks: click.Choice,
     config: click.File,
     dump: click.File,
-    fmt: click.Choice
+    fmt: click.Choice,
+    output: click.File,
 ):
     """The report command creates a overview over all tasks."""
     cfg = ConfigClass.from_yaml(config)
-    rep = Report(blocks, cfg, dump, fmt)
-    rep.render(state.on_progress)
+    rep = Report(blocks, cfg, dump, fmt, output, state.on_progress)
+    rep.render()
 
 
-@ click.command()
+@click.group()
+def query():
+    """Multiple commands to output the content of the output."""
+
+
+@click.command()
+@click.argument(
+    "CONFIG",
+    type=click.File("r"),
+)
+@click.option(
+    "--dump",
+    type=click.File("r"),
+    help="path to Deck API dump",
+)
+@pass_state
+def users(state, config: click.File, dump: click.File):
+    """List the available users."""
+    cfg = ConfigClass.from_yaml(config)
+    query = Query(cfg, dump, state.on_progress)
+    query.users()
+
+
+query.add_command(users)
+
+
+@click.command()
 def report_template():
     """Creates the default template for the report for further
     customization."""
@@ -156,4 +190,5 @@ cli.add_command(config)
 cli.add_command(dump)
 cli.add_command(mail)
 cli.add_command(mail_template)
+cli.add_command(query)
 cli.add_command(report)
