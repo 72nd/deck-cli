@@ -212,10 +212,10 @@ class NCCardPost:
             del data["description"]
         return data
 
-    def dump(self):
+    def dumps(self):
         """Dumps the data to a dict."""
         schema = marshmallow_dataclass.class_schema(NCCardPost)()
-        return schema.dump(self)
+        return schema.dumps(self)
 
 
 def _func_on_dict(

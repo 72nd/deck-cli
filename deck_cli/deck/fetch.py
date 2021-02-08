@@ -109,7 +109,7 @@ class Fetch:
             )
         )
         print(api_url)
-        self.__send_post_request(api_url, card.dump())
+        self.__send_post_request(api_url, card.dumps())
 
     def __send_get_request(self, url: str) -> str:
         """
