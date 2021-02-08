@@ -8,12 +8,12 @@ from deck_cli.cli.config import Config
 from deck_cli.deck.fetch import Fetch, ProgressCallback
 from deck_cli.deck.models import NCBoard, NCDeckStack
 
-from prompt_toolkit import PromptSession
+from prompt_toolkit import PromptSession, print_formatted_text, HTML
 from prompt_toolkit.completion import Completer, Completion, FuzzyCompleter
 from prompt_toolkit.validation import Validator, ValidationError
 
 
-INPUT_DATEFORMAT = "%Y-%m-%d-%H%M"
+INPUT_DATEFORMAT = "%Y-%m-%d %H%M"
 """Input format used for datetime input."""
 
 
@@ -37,6 +37,12 @@ class IBoards(Completer, Validator):
             validator=self,
         )
         return self.__board_by_input(selection)
+
+    def list(self):
+        """Lists the available boards."""
+        output = "\n".join(["<DarkGray>- {}</DarkGray>".format(x.title)
+                            for x in self.boards])
+        print_formatted_text(HTML(output))
 
     def __board_by_input(self, text: str) -> NCBoard:
         """Returns the Board by the input (NCBoard title)."""
@@ -82,6 +88,13 @@ class IStacks(Completer, Validator):
             validator=self,
         )
         return self.__stack_by_input(board_id, selection)
+
+    def list(self, board_id: int):
+        self.__current_stacks = self.__stacks_by_board(board_id)
+        """Lists the available stacks for a given board."""
+        output = "\n".join(["<DarkGray>- {}</DarkGray>".format(x.title)
+                            for x in self.__current_stacks])
+        print_formatted_text(HTML(output))
 
     def __stacks_by_board(self, board_id: int) -> List[NCDeckStack]:
         """
@@ -135,12 +148,21 @@ class InputDateValidator(Validator):
     """Validates the input against the datetime input format."""
 
     def validate(self, document):
+        if document.text == "":
+            return
         try:
             datetime.strptime(document.text, INPUT_DATEFORMAT)
         except ValueError:
             raise ValidationError(
                 message="date format has to be YYYY-MM-DD HHMM"
             )
+
+
+class DummyValidator(Validator):
+    """Validates all input as valid."""
+
+    def validate(self, document):
+        pass
 
 
 class Interactive:
@@ -170,9 +192,11 @@ class Interactive:
         )
         description = self.__session.prompt(
             "Enter a (optional) description: ",
-            validator=None
+            validator=DummyValidator()
         )
+        self.boards.list()
         board = self.boards.select(self.__session)
+        self.stacks.list(board.board_id)
         stack = self.stacks.select(board.board_id, self.__session)
         duedate = self.__session.prompt(
             "Enter a (optional) due-date: ",
