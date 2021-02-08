@@ -1,12 +1,13 @@
 """
 This module handles the interactive CLI interaction with Deck.
 """
+from collections.abc import Callable
 from datetime import datetime
 from typing import Dict, List, Optional
 
 from deck_cli.cli.config import Config
-from deck_cli.deck.fetch import Fetch, ProgressCallback
-from deck_cli.deck.models import NCBoard, NCDeckStack
+from deck_cli.deck.fetch import Fetch
+from deck_cli.deck.models import NCBoard, NCDeckStack, NCCardPost
 
 from prompt_toolkit import PromptSession, print_formatted_text, HTML
 from prompt_toolkit.completion import Completer, Completion, FuzzyCompleter
@@ -17,6 +18,10 @@ INPUT_DATEFORMAT = "%Y-%m-%d %H%M"
 """Input format used for datetime input."""
 
 
+OnWaitCallback = Callable[[str], ]
+"""Called when the user has to wait."""
+
+
 class IBoards(Completer, Validator):
     """
     Handles the interactive interaction with Deck Boards. Also handles the
@@ -24,7 +29,8 @@ class IBoards(Completer, Validator):
     """
     boards: List[NCBoard]
 
-    def __init__(self, fetch: Fetch):
+    def __init__(self, fetch: Fetch, on_wait: OnWaitCallback):
+        on_wait("Fetching Boards from server...")
         self.boards = fetch.all_boards()
 
     def select(self, session: PromptSession) -> NCBoard:
@@ -32,7 +38,7 @@ class IBoards(Completer, Validator):
         Queries the available Boards from the API and lets the user choose one.
         """
         selection = session.prompt(
-            "Select a Board: ",
+            HTML("<SkyBlue><b>Board,</b> select a Board: </SkyBlue>"),
             completer=FuzzyCompleter(self),
             validator=self,
         )
@@ -40,7 +46,7 @@ class IBoards(Completer, Validator):
 
     def list(self):
         """Lists the available boards."""
-        output = "\n".join(["<DarkGray>- {}</DarkGray>".format(x.title)
+        output = "\n".join(["<DarkGreen>- {}</DarkGreen>".format(x.title)
                             for x in self.boards])
         print_formatted_text(HTML(output))
 
@@ -72,10 +78,12 @@ class IStacks(Completer, Validator):
     """
     stacks: Dict[int, List[NCDeckStack]] = {}
     __fetch: Fetch
+    __on_wait = OnWaitCallback
     __current_stacks: Optional[List[NCDeckStack]] = None
 
-    def __init__(self, fetch: Fetch):
+    def __init__(self, fetch: Fetch, on_wait: OnWaitCallback):
         self.__fetch = fetch
+        self.__on_wait = on_wait
 
     def select(self, board_id: int, session: PromptSession) -> NCBoard:
         """
@@ -83,7 +91,10 @@ class IStacks(Completer, Validator):
         """
         self.__current_stacks = self.__stacks_by_board(board_id)
         selection = session.prompt(
-            "Select a Stack: ",
+            HTML(
+                "<SkyBlue><b>Stack,</b> select a Stack for the Card: "
+                "</SkyBlue>"
+            ),
             completer=FuzzyCompleter(self),
             validator=self,
         )
@@ -92,7 +103,7 @@ class IStacks(Completer, Validator):
     def list(self, board_id: int):
         self.__current_stacks = self.__stacks_by_board(board_id)
         """Lists the available stacks for a given board."""
-        output = "\n".join(["<DarkGray>- {}</DarkGray>".format(x.title)
+        output = "\n".join(["<DarkGreen>- {}</DarkGreen>".format(x.title)
                             for x in self.__current_stacks])
         print_formatted_text(HTML(output))
 
@@ -103,6 +114,7 @@ class IStacks(Completer, Validator):
         """
         if board_id in self.stacks:
             return self.stacks[board_id]
+        self.__on_wait("Fetching Stacks from server...")
         self.stacks[board_id] = self.__fetch.stacks_by_board(board_id)
         return self.__stacks_by_board(board_id)
 
@@ -173,32 +185,53 @@ class Interactive:
     stacks: IStacks
     __session: PromptSession
 
-    def __init__(self, config: Config, on_progress: ProgressCallback):
+    def __init__(self, config: Config):
         self.fetch = Fetch(
             config.url,
             config.user,
             config.password,
-            progress_callback=on_progress,
         )
         self.__session = PromptSession()
-        self.boards = IBoards(self.fetch)
-        self.stacks = IStacks(self.fetch)
+        self.boards = IBoards(self.fetch, self.__on_wait)
+        self.stacks = IStacks(self.fetch, self.__on_wait)
 
     def add(self):
         """Interactively adds a new card to the Deck."""
         title = self.__session.prompt(
-            "Enter the Card title: ",
+            HTML("<SkyBlue><b>Title,</b> enter the Card title: </SkyBlue>"),
             validator=TitleValidator()
         )
         description = self.__session.prompt(
-            "Enter a (optional) description: ",
+            HTML(
+                "<SkyBlue><b>Description,</b> enter a (optional) "
+                "description: </SkyBlue>"
+            ),
             validator=DummyValidator()
         )
+        if description == "":
+            description = None
         self.boards.list()
         board = self.boards.select(self.__session)
         self.stacks.list(board.board_id)
         stack = self.stacks.select(board.board_id, self.__session)
         duedate = self.__session.prompt(
-            "Enter a (optional) due-date: ",
+            HTML(
+                "<SkyBlue><b>Due Date,</b> enter a (optional) "
+                "due-date: </SkyBlue>"
+            ),
             validator=InputDateValidator(),
         )
+        if duedate != "":
+            duedate = datetime.strptime(duedate, INPUT_DATEFORMAT)
+        else:
+            duedate = None
+        data = NCCardPost(
+            title=title,
+            description=description,
+            duedate=duedate
+        )
+        self.fetch.add_card(board.board_id, stack.stack_id, data)
+
+    def __on_wait(self, msg: str):
+        """Output informing the user about a ongoing request."""
+        print_formatted_text(HTML("<Gray>{}</Gray>".format(msg)))

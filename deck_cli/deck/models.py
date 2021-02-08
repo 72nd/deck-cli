@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 import datetime
 from typing import List, Optional, Any
 
-from marshmallow import pre_dump, pre_load
+from marshmallow import post_dump, pre_load
 import marshmallow_dataclass
 
 
@@ -197,14 +197,22 @@ class NCCardPost:
     description: Optional[str] = None
     duedate: Optional[datetime.datetime] = None
 
-    @pre_dump
+    @post_dump
     def convert_date(self, data, **kwargs):
         """Converts the dates to ISO-8601."""
-        _func_on_dict(data, datetime_to_iso_8601, ["duedate"])
+        duedate = datetime_to_iso_8601(data["duedate"])
+        if duedate is not None:
+            del data["duedate"]
+        else:
+            data["duedate"] = duedate
+        if data["description"] == None:
+            del data["description"]
+        return data
 
     def dump(self):
         """Dumps the data to a dict."""
         schema = marshmallow_dataclass.class_schema(NCCardPost)()
+        print(schema.dumps(self))
         return schema.dump(self)
 
 

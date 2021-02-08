@@ -16,6 +16,7 @@ ALL_USER_BOARDS_URL = "boards"
 SINGLE_BOARD_URL = "boards/{board_id}"
 ALL_STACKS_URL = "boards/{board_id}/stacks"
 SINGLE_CARD_URL = "boards/{board_id}/stacks/{stack_id}/cards/{card_id}"
+SINGLE_CARD_POST_URL = "boards/{board_id}/stacks/{stack_id}/cards"
 
 
 ProgressCallback = Callable[[int, int, str], ]
@@ -101,13 +102,16 @@ class Fetch:
 
     def add_card(self, board_id: int, stack_id: int, card: NCCardPost):
         """Adds a given card to the Deck via the API."""
-        api_url = SINGLE_CARD_URL.format(
-            board_id=board_id,
-            stack_id=stack_id,
-            card_id=""
+        api_url = self.__deck_api_url(
+            SINGLE_CARD_POST_URL.format(
+                board_id=board_id,
+                stack_id=stack_id,
+            )
         )
+        print(api_url)
+        print(card)
         rqs = requests.post(api_url, card.dump())
-        print(rqs)
+        print(rqs.reason)
 
     def __send_get_request(self, url: str) -> str:
         """

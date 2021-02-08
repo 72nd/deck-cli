@@ -67,7 +67,7 @@ def cli(ctx, debug, muted):
 def add(state, config):
     """Add a new card to a deck."""
     cfg = ConfigClass.from_yaml(config)
-    intr = Interactive(cfg, state.on_progress)
+    intr = Interactive(cfg)
     intr.add()
 
 
