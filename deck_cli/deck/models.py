@@ -4,7 +4,7 @@ Describes the data structure of the get-all-boards API call.
 from collections.abc import Callable
 from dataclasses import dataclass, field
 import datetime
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Union
 
 from marshmallow import post_dump, pre_load
 import marshmallow_dataclass
@@ -97,12 +97,13 @@ class NCDeckCard(Base):
     last_editor: Any = field(metadata=dict(data_key="lastEditor"))
     created_at: Optional[datetime.datetime] = field(
         metadata=dict(data_key="createdAt"))
-    labels: List[NCDeckLabel]
-    assigned_users: List[NCDeckAssignedUser] = field(
+    labels: Optional[List[NCDeckLabel]]
+    assigned_users: Optional[List[NCDeckAssignedUser]] = field(
         metadata=dict(data_key="assignedUsers"))
     attachments: Any
-    attachment_count: int = field(metadata=dict(data_key="attachmentCount"))
-    owner: NCDeckUser
+    attachment_count: Optional[int] = field(
+        metadata=dict(data_key="attachmentCount"))
+    owner: Union[str, NCDeckUser]
     order: int
     archived: bool
     duedate: Optional[datetime.datetime]

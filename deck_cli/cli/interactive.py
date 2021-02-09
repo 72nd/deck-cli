@@ -172,7 +172,7 @@ class IUsers(Completer, Validator):
 
     def list(self):
         """Lists the available Users."""
-        output = ", ".join(self.users)
+        output = "<DarkGreen>{}</DarkGreen>".format(", ".join(self.users))
         print_formatted_text(HTML(output))
 
     def get_completions(self, document, complete_event):
@@ -182,7 +182,7 @@ class IUsers(Completer, Validator):
 
     def validate(self, document):
         """Implements input Validation for Users."""
-        if document.text != "" and document.text in self.users:
+        if document.text == "" or document.text in self.users:
             return
         raise ValidationError(
             message="{} is not a valid User".format(document.text)
@@ -283,6 +283,7 @@ class Interactive:
         self.__on_wait("Card gets added...")
         card = self.fetch.add_card(board.board_id, stack.stack_id, data)
 
+        self.users.list()
         users: List[str] = self.users.select(self.__session)
         for user in users:
             self.__on_wait("Assign {} to Card...".format(user))

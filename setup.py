@@ -19,5 +19,6 @@ setuptools.setup(
         "marshmallow-enum==1.5.1",
         "PyYAML==5.3.1",
         "requests==2.25.1",
+        "typeguard==2.10.0",
     ],
 )

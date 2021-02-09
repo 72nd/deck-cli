@@ -127,6 +127,7 @@ class Fetch:
             )
         )
         rsl = self.__send_post_request(api_url, card.dumps())
+        print(rsl)
         return NCDeckCard.from_json(rsl, False)
 
     def assign_user_to_card(
