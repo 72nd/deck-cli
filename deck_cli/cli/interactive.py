@@ -142,6 +142,53 @@ class IStacks(Completer, Validator):
         )
 
 
+class IUsers(Completer, Validator):
+    """
+    Handles the interactive interaction with the Nextcloud Users. Also handles
+    the caching to prevent unnecessary API calls during the same session.
+    """
+    users: List[str]
+
+    def __init__(self, fetch: Fetch, on_wait: OnWaitCallback):
+        on_wait("Fetching Users from server...")
+        self.users = fetch.user_ids()
+
+    def select(self, session: PromptSession) -> List[str]:
+        """Let the user select one or more User to assign the Card to."""
+        rsl: List[str] = []
+        while True:
+            selection = session.prompt(
+                HTML(
+                    "<SkyBlue><b>Assigned user,</b> empty for none/no "
+                    "additional: </SkyBlue>"
+                ),
+                completer=FuzzyCompleter(self),
+                validator=self,
+            )
+            if selection == "":
+                break
+            rsl.append(selection)
+        return rsl
+
+    def list(self):
+        """Lists the available Users."""
+        output = ", ".join(self.users)
+        print_formatted_text(HTML(output))
+
+    def get_completions(self, document, complete_event):
+        """Implements the interactive completion for Users."""
+        for user in self.users:
+            yield Completion(user)
+
+    def validate(self, document):
+        """Implements input Validation for Users."""
+        if document.text != "" and document.text in self.users:
+            return
+        raise ValidationError(
+            message="{} is not a valid User".format(document.text)
+        )
+
+
 class TitleValidator(Validator):
     """
     A Card title is not allowed to be empty and is limited to 255 characters.

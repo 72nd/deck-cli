@@ -101,10 +101,7 @@ class Fetch:
             "{}/{}".format(self.base_url, ALL_USER_IDS_URL)
         )
         root = ET.fromstring(data)
-        users = root.find("./data/users")
-        for user in users:
-            print(user.text)
-        return []
+        return [x.text for x in root.find("./data/users")]
 
     def user_mail(self, name: str) -> str:
         """

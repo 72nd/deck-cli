@@ -34,7 +34,7 @@ class NCDeckUser:
 
 
 @dataclass
-class NCDeckAssignedUser:
+class NCDeckAssignedUser(Base):
     """A user which is assigned to a Card."""
     user_id: int = field(metadata=dict(data_key="id"))
     participant: NCDeckUser
@@ -86,7 +86,7 @@ class NCDeckPermissions:
 
 
 @dataclass
-class NCDeckCard:
+class NCDeckCard(Base):
     """A single card of the Deck. Typically represents a task."""
     title: str
     description: str
