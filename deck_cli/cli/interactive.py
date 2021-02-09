@@ -229,6 +229,7 @@ class Interactive:
     Handles the interactive interaction with Deck via the CLI.
     """
     boards: IBoards
+    users: IUsers
     stacks: IStacks
     __session: PromptSession
 
@@ -240,6 +241,7 @@ class Interactive:
         )
         self.__session = PromptSession()
         self.boards = IBoards(self.fetch, self.__on_wait)
+        self.users = IUsers(self.fetch, self.__on_wait)
         self.stacks = IStacks(self.fetch, self.__on_wait)
 
     def add(self):
@@ -278,7 +280,17 @@ class Interactive:
             description=description,
             duedate=duedate
         )
-        self.fetch.add_card(board.board_id, stack.stack_id, data)
+        self.__on_wait("Card gets added...")
+        card = self.fetch.add_card(board.board_id, stack.stack_id, data)
+
+        users: List[str] = self.users.select(self.__session)
+        for user in users:
+            self.__on_wait("Assign {} to Card...".format(user))
+            self.fetch.assign_user_to_card(
+                board.board_id,
+                stack.stack_id,
+                card.card_id, user
+            )
 
     def __on_wait(self, msg: str):
         """Output informing the user about a ongoing request."""
