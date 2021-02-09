@@ -17,6 +17,7 @@ setuptools.setup(
         "marshmallow==3.10.0",
         "marshmallow-dataclass==8.3.0",
         "marshmallow-enum==1.5.1",
+        "pytz==2021.1",
         "PyYAML==5.3.1",
         "requests==2.25.1",
         "typeguard==2.10.0",

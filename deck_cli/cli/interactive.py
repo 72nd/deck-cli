@@ -2,7 +2,8 @@
 This module handles the interactive CLI interaction with Deck.
 """
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, tzinfo
+import pytz
 from typing import Dict, List, Optional
 
 from deck_cli.cli.config import Config
@@ -12,10 +13,6 @@ from deck_cli.deck.models import NCBoard, NCDeckStack, NCCardPost
 from prompt_toolkit import PromptSession, print_formatted_text, HTML
 from prompt_toolkit.completion import Completer, Completion, FuzzyCompleter
 from prompt_toolkit.validation import Validator, ValidationError
-
-
-INPUT_DATEFORMAT = "%Y-%m-%d %H%M"
-"""Input format used for datetime input."""
 
 
 OnWaitCallback = Callable[[str], ]
@@ -189,6 +186,61 @@ class IUsers(Completer, Validator):
         )
 
 
+class IDueDate(Validator):
+    """
+    Handles the interactive due-date prompt. If the time is not specified 0:00
+    is automatically added as time. Also this object handles some timezone
+    related tinkering: The Deck API ignores the timezone information in the
+    POST request and internally saves all dates as UTC. Thus the conversion
+    from the local timezone to UTC has to happen locally.
+    """
+
+    datetime_format: str = "%Y-%m-%d %H%M"
+    date_format: str = "%Y-%m-%d"
+    timezone: tzinfo
+
+    def __init__(self, timezone: str):
+        self.timezone = pytz.timezone(timezone)
+
+    def select(self, session: PromptSession) -> Optional[datetime]:
+        """Prompts the user for a date(-time) input."""
+        raw = session.prompt(
+            HTML(
+                "<SkyBlue><b>Due Date,</b> enter a (optional) "
+                "due-date: </SkyBlue>"
+            ),
+            validator=self,
+        )
+        if raw == "":
+            return None
+        try:
+            date = datetime.strptime(raw, self.datetime_format)
+        except ValueError:
+            date = datetime.strptime(raw, self.date_format)
+        return self.timezone.localize(date).astimezone(pytz.utc)
+
+    def validate(self, document):
+        """Validates the user-input."""
+        if document.text == "":
+            return
+        invalid_datetime = False
+        invalid_date = False
+
+        try:
+            datetime.strptime(document.text, self.datetime_format)
+        except ValueError:
+            invalid_datetime = True
+        try:
+            datetime.strptime(document.text, self.date_format)
+        except ValueError:
+            invalid_date = True
+
+        if invalid_datetime and invalid_date:
+            raise ValidationError(
+                message="date format has to be YYYY-MM-DD HHMM or YYYY-MM-DD"
+            )
+
+
 class TitleValidator(Validator):
     """
     A Card title is not allowed to be empty and is limited to 255 characters.
@@ -201,20 +253,6 @@ class TitleValidator(Validator):
             )
         if document.text == "":
             raise ValidationError(message="Title is not allowed to be empty")
-
-
-class InputDateValidator(Validator):
-    """Validates the input against the datetime input format."""
-
-    def validate(self, document):
-        if document.text == "":
-            return
-        try:
-            datetime.strptime(document.text, INPUT_DATEFORMAT)
-        except ValueError:
-            raise ValidationError(
-                message="date format has to be YYYY-MM-DD HHMM"
-            )
 
 
 class DummyValidator(Validator):
@@ -231,6 +269,7 @@ class Interactive:
     boards: IBoards
     users: IUsers
     stacks: IStacks
+    timezone: str
     __session: PromptSession
 
     def __init__(self, config: Config):
@@ -243,6 +282,7 @@ class Interactive:
         self.boards = IBoards(self.fetch, self.__on_wait)
         self.users = IUsers(self.fetch, self.__on_wait)
         self.stacks = IStacks(self.fetch, self.__on_wait)
+        self.timezone = config.timezone
 
     def add(self):
         """Interactively adds a new card to the Deck."""
@@ -264,17 +304,9 @@ class Interactive:
         board = self.boards.select(self.__session)
         self.stacks.list(board.board_id)
         stack = self.stacks.select(board.board_id, self.__session)
-        duedate = self.__session.prompt(
-            HTML(
-                "<SkyBlue><b>Due Date,</b> enter a (optional) "
-                "due-date: </SkyBlue>"
-            ),
-            validator=InputDateValidator(),
-        )
-        if duedate != "":
-            duedate = datetime.strptime(duedate, INPUT_DATEFORMAT)
-        else:
-            duedate = None
+
+        duedate = IDueDate(self.timezone).select(self.__session)
+
         data = NCCardPost(
             title=title,
             description=description,

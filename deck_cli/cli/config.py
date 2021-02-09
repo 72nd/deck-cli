@@ -53,6 +53,12 @@ class Config:
             default="deck-cache.yaml",
         )
     )
+    timezone: str = field(
+        metadata=dict(
+            description="Timezone",
+            default="Europe/Berlin",
+        )
+    )
     Schema: ClassVar[Type[Schema]] = Schema
 
     @classmethod
