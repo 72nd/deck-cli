@@ -204,12 +204,9 @@ class NCCardPost:
     @post_dump
     def convert_date(self, data, **kwargs):
         """Converts the dates to ISO-8601."""
-        duedate = datetime_to_iso_8601(data["duedate"])
-        if duedate is not None:
+        if data["duedate"] is None:
             del data["duedate"]
-        else:
-            data["duedate"] = duedate
-        if data["description"] == None:
+        if data["description"] is None:
             del data["description"]
         return data
 
