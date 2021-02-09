@@ -255,7 +255,7 @@ class TitleValidator(Validator):
             raise ValidationError(message="Title is not allowed to be empty")
 
 
-class DummyValidator(Validator):
+class IDummy(Validator):
     """Validates all input as valid."""
 
     def validate(self, document):
@@ -296,7 +296,7 @@ class Interactive:
                 "<SkyBlue><b>Description,</b> enter a (optional) "
                 "description: </SkyBlue>"
             ),
-            validator=DummyValidator()
+            validator=IDummy()
         )
         if description == "":
             description = None
@@ -324,6 +324,16 @@ class Interactive:
                 stack.stack_id,
                 card.card_id, user
             )
+
+        proceed = self.__session.prompt(
+            HTML(
+                "<SkyBlue><b>Proceed,</b> add another Card? (y/ ) "
+                "description: </SkyBlue>"
+            ),
+            validator=IDummy()
+        )
+        if proceed == "y" or proceed == "1":
+            self.add()
 
     def __on_wait(self, msg: str):
         """Output informing the user about a ongoing request."""
