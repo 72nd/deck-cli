@@ -197,6 +197,7 @@ class Interactive:
 
     def add(self):
         """Interactively adds a new card to the Deck."""
+        self.fetch.user_ids()
         title = self.__session.prompt(
             HTML("<SkyBlue><b>Title,</b> enter the Card title: </SkyBlue>"),
             validator=TitleValidator()

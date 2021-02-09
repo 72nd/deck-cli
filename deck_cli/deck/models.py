@@ -213,8 +213,19 @@ class NCCardPost:
         return data
 
     def dumps(self):
-        """Dumps the data to a dict."""
+        """Returns the content of the instance as JSON representation."""
         schema = marshmallow_dataclass.class_schema(NCCardPost)()
+        return schema.dumps(self)
+
+
+@dataclass
+class NCCardAssignUserRequest:
+    """Put request body for assigning a User to a Deck card."""
+    user_id: str = field(metadata=dict(data_key="userId"))
+
+    def dumps(self):
+        """Returns the content of the instance as JSON representation."""
+        schema = marshmallow_dataclass.class_schema(NCCardAssignUserRequest)()
         return schema.dumps(self)
 
 

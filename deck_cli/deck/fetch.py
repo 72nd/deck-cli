@@ -6,17 +6,19 @@ from collections.abc import Callable
 import xml.etree.ElementTree as ET
 from typing import List
 
-from deck_cli.deck.models import NCBoard, NCBaseBoard, NCDeckStack, NCCardPost
+from deck_cli.deck.models import NCBoard, NCBaseBoard, NCDeckCard, NCDeckStack, NCCardPost, NCDeckAssignedUser, NCCardAssignUserRequest
 
 import requests
 
-DECK_APP_URL = "apps/deck/api/v1.0"
+ALL_USER_IDS_URL = "/ocs/v1.php/cloud/users"
 USER_DETAILS_URL = "ocs/v1.php/cloud/users/{user_uuid}"
+DECK_APP_URL = "apps/deck/api/v1.0"
 ALL_USER_BOARDS_URL = "boards"
 SINGLE_BOARD_URL = "boards/{board_id}"
 ALL_STACKS_URL = "boards/{board_id}/stacks"
 SINGLE_CARD_URL = "boards/{board_id}/stacks/{stack_id}/cards/{card_id}"
 SINGLE_CARD_POST_URL = "boards/{board_id}/stacks/{stack_id}/cards"
+ASSIGN_USER_TO_CARD_URL = "boards/{board_id}/stacks/{stack_id}/cards/{card_id}/assignUser"
 
 
 ProgressCallback = Callable[[int, int, str], ]
@@ -90,6 +92,20 @@ class Fetch:
             self.__deck_api_url(ALL_STACKS_URL.format(board_id=board_id)))
         return NCDeckStack.from_json(data, True)
 
+    def user_ids(self) -> List[str]:
+        """
+        Returns a list of Nextcloud's user ids also known as user-names in the
+        web front-end.
+        """
+        data = self.__send_get_request(
+            "{}/{}".format(self.base_url, ALL_USER_IDS_URL)
+        )
+        root = ET.fromstring(data)
+        users = root.find("./data/users")
+        for user in users:
+            print(user.text)
+        return []
+
     def user_mail(self, name: str) -> str:
         """
         Returns a dictionary mapping the given user name to his/her
@@ -100,7 +116,12 @@ class Fetch:
         root = ET.fromstring(data)
         return root.find("./data/email").text
 
-    def add_card(self, board_id: int, stack_id: int, card: NCCardPost):
+    def add_card(
+            self,
+            board_id: int,
+            stack_id: int,
+            card: NCCardPost,
+    ) -> NCDeckCard:
         """Adds a given card to the Deck via the API."""
         api_url = self.__deck_api_url(
             SINGLE_CARD_POST_URL.format(
@@ -108,8 +129,27 @@ class Fetch:
                 stack_id=stack_id,
             )
         )
-        print(api_url)
-        self.__send_post_request(api_url, card.dumps())
+        rsl = self.__send_post_request(api_url, card.dumps())
+        return NCDeckCard.from_json(rsl, False)
+
+    def assign_user_to_card(
+        self,
+        board_id: int,
+        stack_id: int,
+        card_id: int,
+        user_uid: str
+    ) -> NCDeckAssignedUser:
+        """Assign a User with a given uid (Nextlcoud user name) to a card."""
+        api_url = self.__deck_api_url(
+            ASSIGN_USER_TO_CARD_URL.format(
+                board_id=board_id,
+                stack_id=stack_id,
+                card_id=card_id,
+            )
+        )
+        body = NCCardAssignUserRequest(user_id=user_uid)
+        rsl = self.__send_put_request(api_url, body.dumps())
+        return NCDeckAssignedUser.from_json(rsl, False)
 
     def __send_get_request(self, url: str) -> str:
         """
@@ -123,16 +163,25 @@ class Fetch:
         )
         return rqs.text
 
-    def __send_post_request(self, url: str, data):
-        """Send POST Request to the API with a given data body."""
-        print(data) # <-- HERE, check Order
+    def __send_put_request(self, url: str, data) -> str:
+        """Send a PUT Request to the API with a given data body."""
+        rqs = requests.put(
+            url,
+            data=data,
+            headers=self.__request_header(),
+            auth=(self.user, self.password)
+        )
+        return rqs.text
+
+    def __send_post_request(self, url: str, data) -> str:
+        """Send a POST Request to the API with a given data body."""
         rqs = requests.post(
             url,
             data=data,
             headers=self.__request_header(),
             auth=(self.user, self.password)
         )
-        print(rqs.text)
+        return rqs.text
 
     def __deck_api_url(self, postfix: str) -> str:
         """Returns the Deck API URL with a given postfix."""
