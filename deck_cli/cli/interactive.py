@@ -87,14 +87,19 @@ class IStacks(Completer, Validator):
         Queries the available Boards from the API and lets the user choose one.
         """
         self.__current_stacks = self.__stacks_by_board(board_id)
+        default = ""
+        if len(self.__current_stacks) > 0:
+            default = self.__current_stacks[0]
         selection = session.prompt(
             HTML(
-                "<SkyBlue><b>Stack,</b> select a Stack for the Card: "
-                "</SkyBlue>"
+                "<SkyBlue><b>Stack,</b> select a Stack for the Card "
+                "(enter for '{}'): </SkyBlue>".format(default.title)
             ),
             completer=FuzzyCompleter(self),
             validator=self,
         )
+        if selection == "":
+            return default
         return self.__stack_by_input(board_id, selection)
 
     def list(self, board_id: int):
@@ -130,7 +135,8 @@ class IStacks(Completer, Validator):
 
     def validate(self, document):
         """Implements input Validation for Stacks."""
-        if document.text in [x.title for x in self.__current_stacks]:
+        if document.text == "" or document.text in [
+                x.title for x in self.__current_stacks]:
             return
         raise ValidationError(
             message="{} is not a valid Stack in current Board".format(
