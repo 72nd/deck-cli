@@ -27,9 +27,20 @@ class IBoards(Completer, Validator):
     """
     boards: List[NCBoard]
 
-    def __init__(self, fetch: Fetch, on_wait: OnWaitCallback):
+    def __init__(
+            self,
+            fetch: Fetch,
+            on_wait: OnWaitCallback,
+            on_error: Callable[[str], ]
+    ):
         on_wait("Fetching Boards from server...")
-        self.boards = fetch.all_boards()
+        try:
+            self.boards = fetch.all_boards()
+        except DeckException as exc:
+            msg = str(exc)
+            on_error("Couldn't fetch Boards from server, {}".format(
+                msg[:1].lower() + msg[1:]
+            ))
 
     def select(self, session: PromptSession) -> NCBoard:
         """
@@ -298,7 +309,7 @@ class Interactive:
             config.password,
         )
         self.__session = PromptSession()
-        self.boards = IBoards(self.fetch, self.__on_wait)
+        self.boards = IBoards(self.fetch, self.__on_wait, self.__on_error)
         self.users = IUsers(self.fetch, self.__on_wait, self.__on_error)
         self.stacks = IStacks(self.fetch, self.__on_wait)
         self.timezone = config.timezone
