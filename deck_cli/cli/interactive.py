@@ -1,14 +1,15 @@
 """
 This module handles the interactive CLI interaction with Deck.
 """
-from collections.abc import Callable
-from datetime import datetime, tzinfo
-import pytz
-from typing import Dict, List, Optional
-
 from deck_cli.cli.config import Config
 from deck_cli.deck.fetch import Fetch, NextcloudException
-from deck_cli.deck.models import NCBoard, NCDeckStack, NCCardPost, DeckException
+from deck_cli.deck.models import NCBoard, NCDeckStack, NCCardPost, NCDeckCard, DeckException
+
+from collections.abc import Callable
+from datetime import datetime, tzinfo
+import sys
+import pytz
+from typing import Dict, List, Optional
 
 from prompt_toolkit import PromptSession, print_formatted_text, HTML
 from prompt_toolkit.completion import Completer, Completion, FuzzyCompleter
@@ -152,9 +153,21 @@ class IUsers(Completer, Validator):
     """
     users: List[str]
 
-    def __init__(self, fetch: Fetch, on_wait: OnWaitCallback):
+    def __init__(
+            self,
+            fetch: Fetch,
+            on_wait: OnWaitCallback,
+            on_error: Callable[[str], ]
+    ):
         on_wait("Fetching Users from server...")
-        self.users = fetch.user_ids()
+        try:
+            self.users = fetch.user_ids()
+        except NextcloudException as exc:
+            msg = str(exc)
+            on_error("Couldn't load Users from server, {}.".format(
+                msg[:1].lower() + msg[1:]
+            ))
+            sys.exit(1)
 
     def select(self, session: PromptSession) -> List[str]:
         """Let the user select one or more User to assign the Card to."""
@@ -286,7 +299,7 @@ class Interactive:
         )
         self.__session = PromptSession()
         self.boards = IBoards(self.fetch, self.__on_wait)
-        self.users = IUsers(self.fetch, self.__on_wait)
+        self.users = IUsers(self.fetch, self.__on_wait, self.__on_error)
         self.stacks = IStacks(self.fetch, self.__on_wait)
         self.timezone = config.timezone
 
@@ -324,8 +337,7 @@ class Interactive:
             description=description,
             duedate=duedate
         )
-        self.__on_wait("Card gets added...")
-        card = self.fetch.add_card(board.board_id, stack.stack_id, data)
+        card = self.__add_card(board, stack, data)
 
         self.users.list()
         users: List[str] = self.users.select(self.__session)
@@ -340,12 +352,26 @@ class Interactive:
         if proceed == "y" or proceed == "1":
             self.add()
 
+    def __add_card(
+        self,
+        board: NCBoard,
+        stack: NCDeckStack,
+        data: NCCardPost,
+    ) -> NCDeckCard:
+        """Add a Card with the given data to the remote Nextcloud Deck."""
+        self.__on_wait("Card gets added...")
+        try:
+            return self.fetch.add_card(board.board_id, stack.stack_id, data)
+        except DeckException as exc:
+            self.__on_error("Couldn't add Card, {}".format(exc))
+            sys.exit(1)
+
     def __assign_users(
-            self,
-            users: List[str],
-            board: NCBoard,
-            stack: NCDeckStack,
-            card: NCCardPost,
+        self,
+        users: List[str],
+        board: NCBoard,
+        stack: NCDeckStack,
+        card: NCDeckCard,
     ):
         """Assigns the given users to the cards."""
         for user in users:
@@ -358,12 +384,10 @@ class Interactive:
                 )
             except DeckException as exc:
                 if exc.user_not_part_of_board:
-                    print_formatted_text(
-                        HTML(
-                            "<Red>Card couldn't be assigned to {} as this user"
-                            "isn't part of the Board {}</Red>"
-                            .format(user, board.title)
-                        )
+                    self.__on_error(
+                        "<Red>Card couldn't be assigned to {} as this user "
+                        "isn't part of the Board {}</Red>"
+                        .format(user, board.title)
                     )
                 else:
                     raise exc
@@ -372,5 +396,11 @@ class Interactive:
         """Output informing the user about a ongoing request."""
         print_formatted_text(HTML("<Gray>{}</Gray>".format(msg)))
 
-    def __handle_nextcloud_exception(self, exc: NextcloudException):
+    @staticmethod
+    def __on_error(msg: str):
+        """Prints an error message."""
+        print_formatted_text(HTML("<Red>{}</Red>".format(msg)))
+
+    @staticmethod
+    def __handle_nextcloud_exception(exc: NextcloudException):
         """Handles the Nextcloud Exception."""
