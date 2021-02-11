@@ -7,7 +7,7 @@ import pytz
 from typing import Dict, List, Optional
 
 from deck_cli.cli.config import Config
-from deck_cli.deck.fetch import Fetch
+from deck_cli.deck.fetch import Fetch, NextcloudException
 from deck_cli.deck.models import NCBoard, NCDeckStack, NCCardPost, DeckException
 
 from prompt_toolkit import PromptSession, print_formatted_text, HTML
@@ -329,6 +329,24 @@ class Interactive:
 
         self.users.list()
         users: List[str] = self.users.select(self.__session)
+        self.__assign_users(users, board, stack, card)
+        proceed = self.__session.prompt(
+            HTML(
+                "<SkyBlue><b>Proceed,</b> add another Card? (y/ ) "
+                "description: </SkyBlue>"
+            ),
+            validator=IDummy()
+        )
+        if proceed == "y" or proceed == "1":
+            self.add()
+
+    def __assign_users(
+            self,
+            board: NCBoard,
+            stack: NCDeckStack,
+            card: NCCardPost, users: List[str]
+    ):
+        """Assigns the given users to the cards."""
         for user in users:
             self.__on_wait("Assign {} to Card...".format(user))
             try:
@@ -348,16 +366,10 @@ class Interactive:
                     )
                 else:
                     raise exc
-        proceed = self.__session.prompt(
-            HTML(
-                "<SkyBlue><b>Proceed,</b> add another Card? (y/ ) "
-                "description: </SkyBlue>"
-            ),
-            validator=IDummy()
-        )
-        if proceed == "y" or proceed == "1":
-            self.add()
 
     def __on_wait(self, msg: str):
         """Output informing the user about a ongoing request."""
         print_formatted_text(HTML("<Gray>{}</Gray>".format(msg)))
+
+    def __handle_nextcloud_exception(self, exc: NextcloudException):
+        """Handles the Nextcloud Exception."""
