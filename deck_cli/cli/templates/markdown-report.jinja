@@ -9,12 +9,12 @@
 {%- endmacro -%}
 
 {%- macro render_progres(card) -%}
-`{{ card.state | upper }}`
+`{{ card.state | upper }}` 
 {%- endmacro -%}
 
 {%- macro render_overdue(card) -%}
 {%- call on_not_none(card.duedate) -%}
-{% if card.duedate < now %}**OVERDUE** {% endif %}
+{% if card.duedate < now %} **OVERDUE** {% endif %}
 {%- endcall -%}
 {%- endmacro -%}
 
