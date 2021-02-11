@@ -31,6 +31,15 @@ user about the progress. The following parameters are provided:
 """
 
 
+class NextcloudException(Exception):
+    """Catches Nextcloud API errors."""
+
+    def __init__(self, root: ET):
+        code = root.find("./meta/statuscode").text
+        message = root.find("./meta/message").text
+        Exception.__init__(self, "{} ({})".format(message, code))
+
+
 class Fetch:
     """
     Contains all calls to the Nextcloud and Deck API.
@@ -101,6 +110,8 @@ class Fetch:
             "{}/{}".format(self.base_url, ALL_USER_IDS_URL)
         )
         root = ET.fromstring(data)
+        if root.find("./meta/status").text == "failure":
+            raise NextcloudException(root)
         return [x.text for x in root.find("./data/users")]
 
     def user_mail(self, name: str) -> str:
