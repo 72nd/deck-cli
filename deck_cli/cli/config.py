@@ -79,7 +79,8 @@ class Config:
             backlog_stacks=["Backlog"],
             progress_stacks=["In Progress"],
             done_stacks=["Done"],
-            mail_cache_path="check-cache.yaml"
+            mail_cache_path="check-cache.yaml",
+            timezone="Europe/Berlin",
         )
 
     def to_yaml(self) -> str:
