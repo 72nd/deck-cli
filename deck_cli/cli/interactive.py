@@ -342,9 +342,10 @@ class Interactive:
 
     def __assign_users(
             self,
+            users: List[str],
             board: NCBoard,
             stack: NCDeckStack,
-            card: NCCardPost, users: List[str]
+            card: NCCardPost,
     ):
         """Assigns the given users to the cards."""
         for user in users:
