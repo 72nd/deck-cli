@@ -47,12 +47,12 @@ class Config:
             description="Stacks containing done tasks",
             default=["Done"])
     )
-    mail_cache_path: str = field(
-        metadata=dict(
-            description="Path to mail-address cache",
-            default="deck-cache.yaml",
-        )
-    )
+    # mail_cache_path: str = field(
+    #   metadata=dict(
+    #       description="Path to mail-address cache",
+    #       default="deck-cache.yaml",
+    #   )
+    # )
     timezone: str = field(
         metadata=dict(
             description="Timezone",
@@ -79,7 +79,7 @@ class Config:
             backlog_stacks=["Backlog"],
             progress_stacks=["In Progress"],
             done_stacks=["Done"],
-            mail_cache_path="check-cache.yaml",
+            # mail_cache_path="check-cache.yaml",
             timezone="Europe/Berlin",
         )
 
