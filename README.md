@@ -1,7 +1,7 @@
 # deck-cli
 
  <p align="center">
-  <img width="180" src="misc/header.png">
+  <img width="140" src="misc/header.png">
 </p>
 
 deck-cli is a command-line tool for interacting with Nextcloud's [Deck Plugin](https://apps.nextcloud.com/apps/deck) by using it's [API](https://deck.readthedocs.io/en/latest/API/). I developed this tool to speed up working with Deck. Thus this application only covers a part of Deck's capabilities.
@@ -9,7 +9,11 @@ deck-cli is a command-line tool for interacting with Nextcloud's [Deck Plugin](h
 
 ## Installation
 
-_TODO._
+```shell script
+git clone https://github.com/72nd/deck-cli.git
+cd deck-cli
+pip install .
+```
 
 
 ## Configuration
@@ -55,3 +59,7 @@ ignore_board:
 # will most probably be your local timezone.
 timezone: Europe/Berlin
 ```
+
+
+## Add Card
+

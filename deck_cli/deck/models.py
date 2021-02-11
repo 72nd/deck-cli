@@ -4,27 +4,39 @@ Describes the data structure of the get-all-boards API call.
 from collections.abc import Callable
 from dataclasses import dataclass, field
 import datetime
+import json
 from typing import List, Optional, Any, Union
 
 from marshmallow import post_dump, pre_load
 import marshmallow_dataclass
 
 
-@dataclass
+class DeckException(Exception):
+    """Catches Nextcloud API errors."""
+
+    def __init__(self, raw: str):
+        data = json.loads(raw)
+        Exception.__init__(self, data["message"])
+
+
+@ dataclass
 class Base:
     """
     The base class for all data classes. Provides the JSON
     unmarshaling for all classes.
     """
 
-    @classmethod
+    @ classmethod
     def from_json(cls, raw: str, many=bool) -> 'NCBoard':
         """Reads the NCBoard from a JSON string."""
+        data = json.loads(raw)
+        if isinstance(data, dict) and "status" in data and data["status"] == 400:
+            raise DeckException(raw)
         schema = marshmallow_dataclass.class_schema(cls)()
         return schema.loads(raw, many=many)
 
 
-@dataclass
+@ dataclass
 class NCDeckUser:
     """The user in Nextcloud Deck."""
     primary_key: str = field(metadata=dict(data_key="primaryKey"))
@@ -33,7 +45,7 @@ class NCDeckUser:
     user_type: int = field(metadata=dict(data_key="type"))
 
 
-@dataclass
+@ dataclass
 class NCDeckAssignedUser(Base):
     """A user which is assigned to a Card."""
     user_id: int = field(metadata=dict(data_key="id"))
@@ -42,7 +54,7 @@ class NCDeckAssignedUser(Base):
     assignment_type: int = field(metadata=dict(data_key="type"))
 
 
-@dataclass
+@ dataclass
 class NCDeckLabel:
     """Labels are used to tag cards or boards."""
     title: str
@@ -54,7 +66,7 @@ class NCDeckLabel:
     label_id: int = field(metadata=dict(data_key="id"))
     etag: str = field(metadata=dict(data_key="ETag"))
 
-    @pre_load
+    @ pre_load
     def convert_date(self, data, **kwargs):
         """Converts all Unix dates to normal python datetime objects."""
         _func_on_dict(data, _timestamp_to_optional_date,
@@ -62,7 +74,7 @@ class NCDeckLabel:
         return data
 
 
-@dataclass
+@ dataclass
 class NCDeckSharedEntity:
     """Entity a Deck resource was shared (also known as acl)."""
     participant: NCDeckUser
@@ -75,7 +87,7 @@ class NCDeckSharedEntity:
     entity_id: int = field(metadata=dict(data_key="id"))
 
 
-@dataclass
+@ dataclass
 class NCDeckPermissions:
     """Describes the permission a certain entity can have over a resource."""
     permission_read: bool = field(metadata=dict(data_key="PERMISSION_READ"))
@@ -85,7 +97,7 @@ class NCDeckPermissions:
     permission_share: bool = field(metadata=dict(data_key="PERMISSION_SHARE"))
 
 
-@dataclass
+@ dataclass
 class NCDeckCard(Base):
     """A single card of the Deck. Typically represents a task."""
     title: str
@@ -114,7 +126,7 @@ class NCDeckCard(Base):
     etag: str = field(metadata=dict(data_key="ETag"))
     overdue: int
 
-    @pre_load
+    @ pre_load
     def convert_date(self, data, **kwargs):
         """Converts all Unix dates to normal python datetime objects."""
         _func_on_dict(data, _timestamp_to_optional_date,
@@ -122,14 +134,14 @@ class NCDeckCard(Base):
         return data
 
 
-@dataclass
+@ dataclass
 class NCDeckBoardSettings:
     """The settings of a Deck board."""
     notify_due: str = field(metadata=dict(data_key="notify-due"))
     calendar: bool
 
 
-@dataclass
+@ dataclass
 class NCDeckStack(Base):
     """A Stack of a Deck Board."""
     title: str
@@ -143,7 +155,7 @@ class NCDeckStack(Base):
     stack_id: int = field(metadata=dict(data_key="id"))
     etag: str = field(metadata=dict(data_key="ETag"))
 
-    @pre_load
+    @ pre_load
     def convert_date(self, data, **kwargs):
         """Converts all Unix dates to normal python datetime objects."""
         _func_on_dict(data, _timestamp_to_optional_date,
@@ -151,7 +163,7 @@ class NCDeckStack(Base):
         return data
 
 
-@dataclass
+@ dataclass
 class NCBaseBoard(Base):
     """
     A Deck Board as it's returned by the query for a specific board
@@ -175,7 +187,7 @@ class NCBaseBoard(Base):
     board_id: int = field(metadata=dict(data_key="id"))
     etag: str = field(metadata=dict(data_key="ETag"))
 
-    @pre_load
+    @ pre_load
     def convert_date(self, data, **kwargs):
         """Converts all Unix dates to normal python datetime objects."""
         _func_on_dict(data, _timestamp_to_optional_date,
@@ -183,13 +195,13 @@ class NCBaseBoard(Base):
         return data
 
 
-@dataclass
+@ dataclass
 class NCBoard(NCBaseBoard):
     """A Deck Board as returned by the get-all-boards API call."""
     shared: int
 
 
-@dataclass
+@ dataclass
 class NCCardPost:
     """Post request body for a create new Card API call."""
     title: str
@@ -201,7 +213,7 @@ class NCCardPost:
     class Meta:
         ordered = True
 
-    @post_dump
+    @ post_dump
     def convert_date(self, data, **kwargs):
         """Converts the dates to ISO-8601."""
         if data["duedate"] is None:
@@ -216,7 +228,7 @@ class NCCardPost:
         return schema.dumps(self)
 
 
-@dataclass
+@ dataclass
 class NCCardAssignUserRequest:
     """Put request body for assigning a User to a Deck card."""
     user_id: str = field(metadata=dict(data_key="userId"))

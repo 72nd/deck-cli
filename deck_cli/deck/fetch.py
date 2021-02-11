@@ -2,11 +2,11 @@
 Fetch abstracts all calls to the Nextcloud and Deck API.
 """
 
+from deck_cli.deck.models import NCBoard, NCBaseBoard, NCDeckCard, NCDeckStack, NCCardPost, NCDeckAssignedUser, NCCardAssignUserRequest
+
 from collections.abc import Callable
 import xml.etree.ElementTree as ET
 from typing import List
-
-from deck_cli.deck.models import NCBoard, NCBaseBoard, NCDeckCard, NCDeckStack, NCCardPost, NCDeckAssignedUser, NCCardAssignUserRequest
 
 import requests
 
@@ -157,6 +157,7 @@ class Fetch:
         )
         body = NCCardAssignUserRequest(user_id=user_uid)
         rsl = self.__send_put_request(api_url, body.dumps())
+        print(rsl)
         return NCDeckAssignedUser.from_json(rsl, False)
 
     def __send_get_request(self, url: str) -> str:
