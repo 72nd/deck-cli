@@ -63,3 +63,6 @@ timezone: Europe/Berlin
 
 ## Add Card
 
+You can use deck-cli to interactively add new Cards to your Nextcloud using the `deck-cli add path/to/config.yaml` command. The names of Boards, Stacks etc. will be fetched from the API and be used for validation prior to submitting the data. Further auto-completion is used whenever possible. 
+
+![Add Screenshot](misc/add.png)
