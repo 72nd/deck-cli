@@ -133,14 +133,14 @@ def mail_template():
     type=click.File("r"),
     help="path to Deck API dump",
 )
-@click.option(
-    "-f",
-    "--format",
-    "fmt",
-    type=click.Choice(["plain", "markdown"], case_sensitive=False),
-    help="choose output format",
-    default="plain"
-)
+# @click.option(
+#     "-f",
+#     "--format",
+#     "fmt",
+#     type=click.Choice(["plain", "markdown"], case_sensitive=False),
+#     help="choose output format",
+#     default="plain"
+# )
 @click.option(
     "-o",
     "--output",
@@ -153,12 +153,12 @@ def report(
     blocks: click.Choice,
     config: click.File,
     dump: click.File,
-    fmt: click.Choice,
+    # fmt: click.Choice,
     output: click.File,
 ):
     """The report command creates a overview over all tasks."""
     cfg = ConfigClass.from_yaml(config)
-    rep = Report(blocks, cfg, dump, fmt, output, state.on_progress)
+    rep = Report(blocks, cfg, dump, "markdown", output, state.on_progress)
     rep.render()
 
 
