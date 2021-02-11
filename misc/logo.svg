@@ -7,9 +7,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="994.16455"
-   height="770.49597"
-   viewBox="0 0 263.03937 203.8604"
+   width="1024"
+   height="1024"
+   viewBox="0 0 270.93333 270.93334"
    version="1.1"
    id="svg8"
    inkscape:version="1.0.2 (e86c870879, 2021-01-15)"
@@ -21,7 +21,7 @@
      id="defs2">
     <rect
        x="44.557537"
-       y="132.23759"
+       y="132.2376"
        width="3.7417734"
        height="10.093536"
        id="rect966" />
@@ -44,7 +44,7 @@
      showguides="false"
      inkscape:window-width="1842"
      inkscape:window-height="810"
-     inkscape:window-x="1977"
+     inkscape:window-x="57"
      inkscape:window-y="83"
      inkscape:window-maximized="0" />
   <metadata
@@ -62,11 +62,12 @@
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1"
-     transform="translate(-3.9469762,-33.536469)">
+     id="layer1">
     <g
        id="g1070"
-       transform="translate(0,-8.0171658)">
+       transform="translate(0,-8.0171658)"
+       inkscape:export-xdpi="92"
+       inkscape:export-ydpi="92">
       <rect
          style="font-variation-settings:normal;opacity:1;vector-effect:none;fill:#d3e0ea;fill-opacity:1;stroke-width:10.5833;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:markers stroke fill;stop-color:#000000;stop-opacity:1"
          id="rect837-6-3-6"
@@ -106,6 +107,6 @@
     <text
        xml:space="preserve"
        id="text964"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:2.99861px;line-height:120%;font-family:'Source Code Pro';-inkscape-font-specification:'Source Code Pro Bold';font-feature-settings:italic;text-align:center;text-decoration:none;text-decoration-line:none;text-decoration-color:#000000;white-space:pre;shape-inside:url(#rect966);opacity:1;vector-effect:none;fill:#a3d2ca;fill-opacity:1;stroke-width:10.5833;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:markers stroke fill;stop-color:#000000;stop-opacity:1;" />
+       style="-inkscape-font-specification:'Source Code Pro Bold';font-family:'Source Code Pro';fill:#a3d2ca;font-size:2.99861113px;font-variant-east_asian:normal;font-feature-settings:italic;text-decoration:none;text-decoration-color:#000000;line-height:120%;paint-order:markers stroke fill;stop-color:#000000;text-align:center;stroke-width:10.5833;stroke-linejoin:round;font-weight:bold;fill-opacity:1;opacity:1;vector-effect:none;stroke-linecap:butt;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;stop-opacity:1;font-style:normal;font-stretch:normal;font-variant:normal;white-space:pre;shape-inside:url(#rect966);" />
   </g>
 </svg>

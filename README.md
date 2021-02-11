@@ -66,3 +66,16 @@ timezone: Europe/Berlin
 You can use deck-cli to interactively add new Cards to your Nextcloud using the `deck-cli add path/to/config.yaml` command. The names of Boards, Stacks etc. will be fetched from the API and be used for validation prior to submitting the data. Further auto-completion is used whenever possible. 
 
 ![Add Screenshot](misc/add.png)
+
+
+## Report
+
+On Nextcloud the Deck application doesn't allow you to get an Overview over all Cards you have access to. deck-cli can generate an overview report as a markdown file.
+
+```shell script
+deck-cli report config.yaml -o report.md
+```
+
+The report then can be saved to Nextcloud where it can be viewed (see the complete example report [here](misc/example-report.md)).
+
+![Report in Nextcloud](misc/report-nextcloud.png)
