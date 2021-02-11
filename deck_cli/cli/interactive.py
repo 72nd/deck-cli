@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 
 from deck_cli.cli.config import Config
 from deck_cli.deck.fetch import Fetch
-from deck_cli.deck.models import NCBoard, NCDeckStack, NCCardPost
+from deck_cli.deck.models import NCBoard, NCDeckStack, NCCardPost, DeckException
 
 from prompt_toolkit import PromptSession, print_formatted_text, HTML
 from prompt_toolkit.completion import Completer, Completion, FuzzyCompleter
@@ -331,12 +331,23 @@ class Interactive:
         users: List[str] = self.users.select(self.__session)
         for user in users:
             self.__on_wait("Assign {} to Card...".format(user))
-            self.fetch.assign_user_to_card(
-                board.board_id,
-                stack.stack_id,
-                card.card_id, user
-            )
-
+            try:
+                self.fetch.assign_user_to_card(
+                    board.board_id,
+                    stack.stack_id,
+                    card.card_id, user
+                )
+            except DeckException as exc:
+                if exc.user_not_part_of_board:
+                    print_formatted_text(
+                        HTML(
+                            "<Red>Card couldn't be assigned to {} as this user"
+                            "isn't part of the Board {}</Red>"
+                            .format(user, board.title)
+                        )
+                    )
+                else:
+                    raise exc
         proceed = self.__session.prompt(
             HTML(
                 "<SkyBlue><b>Proceed,</b> add another Card? (y/ ) "

@@ -157,7 +157,6 @@ class Fetch:
         )
         body = NCCardAssignUserRequest(user_id=user_uid)
         rsl = self.__send_put_request(api_url, body.dumps())
-        print(rsl)
         return NCDeckAssignedUser.from_json(rsl, False)
 
     def __send_get_request(self, url: str) -> str:
