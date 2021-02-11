@@ -290,6 +290,12 @@ class Interactive:
         self.stacks = IStacks(self.fetch, self.__on_wait)
         self.timezone = config.timezone
 
+    async def __init_board(self) -> IBoards:
+        """
+        Instantiates a new IBoards instance. As this includes a API call this
+        method wraps the call async.
+        """
+
     def add(self):
         """Interactively adds a new card to the Deck."""
         self.fetch.user_ids()
